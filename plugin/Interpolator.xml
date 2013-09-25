@@ -1,0 +1,42 @@
+<!--
+ * =====================================================================================
+ *
+ *       Filename:  Interpolator.xml
+ *
+ *    Description:  Interpolator Plugin for ParaView - Server Manager Configuration
+ *
+ *        Version:  1.0
+ *        Created:  12/19/2012 01:44:48 AM
+ *       Revision:  none
+ *       Compiler:  gcc
+ *
+ *         Author:  Siavash Ameli
+ *   Organization:  University of California, Berkeley
+ *
+ * =====================================================================================
+ -->
+
+ <ServerManagerConfiguration>
+     <ProxyGroup name="filters">
+         <SourceProxy name="Interpolator" class="Interpolator" label="Interpolator">
+
+             <Documentation
+                 long_help="Makes velocity data to be continous in time and space afterward in the pipeline."
+                 short_help="Interpolates velocity data.">
+             </Documentation>
+
+             <InputProperty
+                 name="Input"
+                 command="SetInputConnection">
+                 <ProxyGroupDomain name="groups">
+                     <Group name="sources"/>
+                     <Group name="filters"/>
+                 </ProxyGroupDomain>
+                 <DataTypeDomain name="input_type">
+                     <DataType value="vtkDataObject"/>
+                 </DataTypeDomain>
+             </InputProperty>
+
+         </SourceProxy>
+     </ProxyGroup>
+ </ServerManagerConfiguration>

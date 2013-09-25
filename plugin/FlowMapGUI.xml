@@ -1,0 +1,23 @@
+<!--
+ * =====================================================================================
+ *
+ *       Filename:  FlowMapGUI.xml
+ *
+ *    Description:  Flow Map Plugin for ParaView - Plugin GUI
+ *
+ *        Version:  1.0
+ *        Created:  12/19/2012 01:31:59 AM
+ *       Revision:  none
+ *       Compiler:  gcc
+ *
+ *         Author:  Siavash Ameli
+ *   Organization:  University of Claifornia, Berkeley
+ *
+ * ===================================================================================== 
+ -->
+
+<ParaViewFilters>
+    <Category name="Extensions" menu_label="&amp;flowTK">
+        <Filter name="Flow Map"/>
+    </Category>
+</ParaViewFilters>

@@ -1,0 +1,23 @@
+<!--
+ * =====================================================================================
+ *
+ *       Filename:  CacheGUI.xml
+ *
+ *    Description:  Cache Plugin for ParaView - Plugin GUI
+ *
+ *        Version:  1.0
+ *        Created:  12/19/2012 01:25:53 AM
+ *       Revision:  none
+ *       Compiler:  gcc
+ *
+ *         Author:  Siavash Ameli
+ *   Organization:  University of California, Berkeley
+ *
+ * ===================================================================================== 
+ -->
+
+<ParaViewFilters>
+    <Category name="Extensions" menu_label="&amp;flowTK">
+        <Filter name="Cache"/>
+    </Category>
+</ParaViewFilters>

@@ -1,0 +1,52 @@
+# =====
+# Build
+# =====
+
+build/*
+
+# ===
+# Log
+# ===
+
+log/*
+*.log
+
+# ======
+# Debian
+# ======
+
+debian/*
+
+# ===========
+# Binary Data
+# ===========
+
+*.vtu
+
+# ===
+# Doc
+# ===
+
+doc/*.txt
+doc/*.aux
+doc/*.log
+doc/*.out
+doc/*.tex
+doc/*.toc
+
+# ===
+# Vim
+# ===
+
+*.vim
+*.swp
+*.swo
+
+# =======
+# General
+# =======
+
+*~
+*.log
+TODO
+Notes

@@ -1,0 +1,42 @@
+<!--
+ * =====================================================================================
+ *
+ *       Filename:  LCS.xml
+ *
+ *    Description:  LCS Plugin for ParaView - Server Manager Configuration
+ *
+ *        Version:  1.0
+ *        Created:  12/19/2012 01:50:35 AM
+ *       Revision:  none
+ *       Compiler:  gcc
+ *
+ *         Author:  Siavash Ameli
+ *   Organization:  University of California, Berkeley
+ *
+ * =====================================================================================
+ -->
+
+ <ServerManagerConfiguration>
+     <ProxyGroup name="filters">
+         <SourceProxy name="LCS" class="LCS" label="LCS">
+
+             <Documentation
+                 long_help="Identifies Lagrangian Coherent Structures based on a criterion"
+                 short_help="Identifies Lagrangian Coherent Structures.">
+             </Documentation>
+
+             <InputProperty
+                 name="Input"
+                 command="SetInputConnection">
+                 <ProxyGroupDomain name="groups">
+                     <Group name="sources"/>
+                     <Group name="filters"/>
+                 </ProxyGroupDomain>
+                 <DataTypeDomain name="input_type">
+                     <DataType value="vtkDataObject"/>
+                 </DataTypeDomain>
+             </InputProperty>
+
+         </SourceProxy>
+     </ProxyGroup>
+ </ServerManagerConfiguration>

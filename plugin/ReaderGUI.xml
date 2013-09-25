@@ -1,0 +1,23 @@
+<!--
+ * =====================================================================================
+ *
+ *       Filename:  ReaderGUI.xml
+ *
+ *    Description:  Reader Plugin for ParaView - Plugin GUI
+ *
+ *        Version:  1.0
+ *        Created:  12/18/2012 10:24:23 PM
+ *       Revision:  none
+ *       Compiler:  gcc
+ *
+ *         Author:  Siavash Ameli
+ *   Organization:  University of Californoia, Berkeley
+ *
+ * ===================================================================================== 
+ -->
+
+<ParaViewFilters>
+    <Category name="Extensions" menu_label="&amp;flowTK">
+        <Filter name="Reader" icon="ReaderIcon.png"/>
+    </Category>
+</ParaViewFilters>

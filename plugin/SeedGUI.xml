@@ -1,0 +1,23 @@
+<!--
+ * =====================================================================================
+ *
+ *       Filename:  SeedGUI.xml
+ *
+ *    Description:  Seed Plugin for ParaView - Plugin GUI
+ *
+ *        Version:  1.0
+ *        Created:  12/14/2012 12:34:51 AM
+ *       Revision:  none
+ *       Compiler:  gcc
+ *
+ *         Author:  Siavash Ameli
+ *   Organization:  University of California, Berkeley
+ *
+ * ===================================================================================== 
+ -->
+
+<ParaViewFilters>
+    <Category name="Extensions" menu_label="&amp;flowTK">
+        <Filter name="Seed"/>
+    </Category>
+</ParaViewFilters>

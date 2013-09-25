@@ -1,0 +1,23 @@
+<!--
+ * =====================================================================================
+ *
+ *       Filename:  LCSICN.qrc
+ *
+ *    Description:  LCS Plugin for ParaView - Qt Resource File
+ *
+ *        Version:  1.0
+ *        Created:  12/28/2012 01:16:01 PM
+ *       Revision:  none
+ *       Compiler:  gcc
+ *
+ *         Author:  Siavash Ameli
+ *   Organization:  University of California, Berkeley
+ *
+ * =====================================================================================
+ -->
+
+<RCC>
+    <qresource prefix="/icons">
+        <file>LCSIcon.png</file>
+    </qresource>
+</RCC>

@@ -1,0 +1,42 @@
+<!--
+ * =====================================================================================
+ *
+ *       Filename:  Reader.xml
+ *
+ *    Description:  Reader Plugin for ParaView - Server Manager Configuration
+ *
+ *        Version:  1.0
+ *        Created:  12/19/2012 01:38:27 AM
+ *       Revision:  none
+ *       Compiler:  gcc
+ *
+ *         Author:  Siavash Ameli
+ *   Organization:  University of California, Berkeley
+ *
+ * =====================================================================================
+ -->
+
+ <ServerManagerConfiguration>
+     <ProxyGroup name="filters">
+         <SourceProxy name="Reader" class="Reader" label="Reader">
+
+             <Documentation
+                 long_help="Time aware reader for streaming large size data."
+                 short_help="Time aware reader">
+             </Documentation>
+
+             <InputProperty
+                 name="Input"
+                 command="SetInputConnection">
+                 <ProxyGroupDomain name="groups">
+                     <Group name="sources"/>
+                     <Group name="filters"/>
+                 </ProxyGroupDomain>
+                 <DataTypeDomain name="input_type">
+                     <DataType value="vtkDataObject"/>
+                 </DataTypeDomain>
+             </InputProperty>
+
+         </SourceProxy>
+     </ProxyGroup>
+ </ServerManagerConfiguration>

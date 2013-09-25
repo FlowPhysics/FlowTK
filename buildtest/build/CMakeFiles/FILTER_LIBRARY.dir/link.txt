@@ -1,0 +1,2 @@
+/usr/bin/ar cr libFILTER_LIBRARY.a  CMakeFiles/FILTER_LIBRARY.dir/home/sia/code/projvtk/Filter/Pipeline/lib/Seed.cxx.o CMakeFiles/FILTER_LIBRARY.dir/home/sia/code/projvtk/Filter/Pipeline/lib/BaseFilter.cxx.o
+/usr/bin/ranlib libFILTER_LIBRARY.a

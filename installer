@@ -1,0 +1,274 @@
+# =====================================================================================
+#
+#       Filename:  installer
+#
+#    Description:  Linux Installer for the program
+#
+#        Version:  1.0
+#        Created:  03/08/2013 13:43:22 PM
+#       Revision:  none
+#       Compiler:  gcc
+#
+#         Author:  Siavash Ameli
+#   Organization:  University of California, Berkeley
+#
+# =====================================================================================
+
+#!bin/sh
+
+# Switch to bash shell
+ShellType=$(echo $0);
+BashShell="bash";
+NumberOfBashCharacters=${#BashShell};
+LastCharactersOfShellType=${ShellType:${#ShellType} - $NumberOfBashCharacters}
+if [ "$LastCharactersOfShellType" != "$BashShell" ];
+then
+    BashPath=$(which bash);
+    if [ -n "$BashPath" ];
+    then
+         $bashPath
+    fi  
+fi
+
+# Process input argument
+UninstallStatus=false;
+if [ -n "$1" ];
+then
+    if [ "$1" = "--uninstall" ];
+    then
+        UninstallStatus=true;
+    else
+        echo "Unknown option: $1"
+        echo ""
+        echo "Valid options: "
+        echo "--uninstall  uninstall the existing program."
+        exit
+    fi
+fi
+
+# Requesting sudo command
+if $UninstallStatus ;
+then
+    sudo echo "uninstaller program starts."
+else
+    sudo echo "installer program starts."
+fi
+
+# Set Variables
+ProjectName="FlowTK"
+ExecutableName="flowtk"
+RepositoryURL="git://github.com/ameli/FlowTK"
+
+# ==============
+# Uninstallation
+# ==============
+
+if $UninstallStatus;
+then
+    # Find installation path
+    InstalledPath=`which $ExecutableName`
+    if [ -z "$InstalledPath" ];
+    then
+        if [ -f "/usr/local/bin/$ExecutableName" ];
+        then
+            InstalledPath="/usr/local/bin/$ExecutableName"
+        elif [ -f "/usr/bin/$ExecutableName" ];
+        then
+            InstalledPath="/usr/bin/$ExecutableName"
+        else
+            echo "ERROR: Can not find the $ExecutableName program."
+            exit
+        fi
+    fi
+
+    # Uninstalling
+    sudo rm $InstalledPath
+
+    # Again, check installation path
+    InstalledPath2=`which $ExecutableName`
+    if [ -z "$InstalledPath2" ];
+    then
+        if [ -f "/usr/local/bin/$ExecutableName" ];
+        then
+            InstalledPath2="/usr/local/bin/$ExecutableName"
+        elif [ -f "/usr/bin/$ExecutableName" ];
+        then
+            InstalledPath2="/usr/bin/$ExecutableName"
+        fi
+    fi
+
+    # Check if uninstalled
+    if [ -z "$InstalledPath2" ];
+    then
+        echo "$ExecutableName is uninstalled successfully."
+        echo ""
+    else
+        echo "ERROR: can not uninstall $ExecutableName."
+    fi
+
+    exit
+fi
+
+# ============
+# Installation
+# ============
+
+# Check Existing installation
+PreviousInstallationPath=$(which $ExecutableName)
+
+# Previous installation exists
+if [ -n "$PreviousInstallationPath" ];
+then
+    echo "Previous installation exists at: $PreviousInstallationPath"
+
+    # loop till user enters correct input (y/n)
+    while true; do
+        read -p "Do you want to replace existing installation? [y/n]: " ReplaceExistingInstallation
+
+        # enter: n or N
+        if [ "${ReplaceExistingInstallation,,}" = "n" ];
+        then
+            echo "Installation terminated."
+            exit
+
+        # enter: y or Y
+        elif [ "${ReplaceExistingInstallation,,}" = "y" ];
+        then
+            break
+
+        # no n/N/y/Y entered
+        else
+            echo "Not a valid answer. Please type 'y' or 'n': ";
+        fi
+    done
+fi
+
+# Set Build Directory
+if [ -d "/tmp" ];
+then
+    BuildDirectory="/tmp/$ProjectName"
+else
+    BuildDirectory="$HOME/$ProjectName"
+fi
+echo "Build the program in $BuildDirectory"
+
+# Delete existing build dir
+if [ -d $BuildDirectory ];
+then
+    echo "Build directory already exists."
+    echo "Try to remove previous directory ..."
+    sudo rm -rf $BuildDirectory
+    echo "Previous directory deleted successfully."
+fi
+
+# Create Build Directory
+mkdir $BuildDirectory
+cd $BuildDirectory
+
+# Check current directory
+CurrentDirectory="`pwd`"
+if [ "$CurrentDirectory" != "$BuildDirectory" ];
+then
+    echo "ERROR: can not change directory to $BuildDirectory."
+    exit
+fi
+
+# Check git exists
+GitExists=`which git`
+if [ -z "$GitExists" ];
+then
+    echo "git is not installed."
+    echo "Try to install git ..."
+
+    # Install git
+    sudo apt-get install git -y
+    
+    # again, check if git exists
+    GitExists2=`which git`
+    if [ -z "$GitExists2" ];
+    then
+        echo "Attempt to install git failed."
+        echo "Please download the Extract-Boundary program manually."
+        exit
+    else
+        echo "git installed successfully."
+    fi
+fi
+
+# Get the code from repository
+git clone $RepositoryURL $BuildDirectory
+
+# Check if something downloaded
+DirectoryList=$(ls -A $BuildDirectory)
+if [ -z "$DirectoryList" ];
+then
+    echo "FATAL ERROR: downloding program form repository failed."
+    exit
+fi
+
+# Check if cmake exists
+CmakeExists=`which cmake`
+if [ -z "$CmakeExists" ];
+then
+    echo "cmake is not installed."
+    echo "Try to install cmake ..."
+
+    # Install cmake
+    sudo apt-get install cmake -y
+
+    # again, check if cmake exists
+    CmakeExists2=`which cmake`
+    if [ -z "$CmakeExists2" ];
+    then
+        echo "Attempt to install cmake failed"
+        echo "Please install cmake."
+        exit
+    else
+        echo "cmake installed successfully"
+    fi
+fi
+
+# Makefile
+cd $BuildDirectory
+mkdir build
+cd build
+cmake ..
+
+# Check if g++ installed
+GPPExists=`which g++`
+if [ -z "$GPPExists" ];
+then
+    echo "g++ is not installed,"
+    echo "Try to install g++ ..."
+
+    # Install g++
+    sudo apt-get install build-essential -y
+
+    # again check if g++ exists
+    GPPExists2=`which g++`
+    if [ -z "$GPPExists" ];
+    then
+        echo "Attempt to install g++ failed."
+        echo "Please install build-essential"
+        exit
+    else
+        echo "g++ installed successfully"
+    fi
+fi
+
+# Compile
+make
+make package
+sudo make install
+
+echo ""
+ExtractBoundaryExists=`which $ExecutableName`
+if [ -z "$ExtractBoundaryExists" ];
+then
+    echo "Program did NOT install successfully."
+else
+    # remove build directory
+    sudo rm -r $BuildDirectory
+    echo "Program installed successfully."
+fi
+echo ""

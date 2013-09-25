@@ -1,0 +1,42 @@
+<!--
+ * =====================================================================================
+ *
+ *       Filename:  Deformation.xml
+ *
+ *    Description:  Cauchy-Green Plugin for ParaView - Server Manager Configuration
+ *
+ *        Version:  1.0
+ *        Created:  12/14/2012 12:46:23 AM
+ *       Revision:  none
+ *       Compiler:  gcc
+ *
+ *         Author:  Siavash Ameli
+ *   Organization:  University of California, Berkeley
+ *
+ * =====================================================================================
+ -->
+
+ <ServerManagerConfiguration>
+     <ProxyGroup name="filters">
+         <SourceProxy name="Deformation" class="Deformation" label="Cauchy Green">
+
+             <Documentation
+                 long_help="Calculates derivatives of flowmap and computes eogenvalues/vectors ofright Cauchy Green deformation tensor."
+                 short_help="Computes eigenvalues/vectors of Cauchy Green tensor.">
+             </Documentation>
+
+             <InputProperty
+                 name="Input"
+                 command="SetInputConnection">
+                 <ProxyGroupDomain name="groups">
+                     <Group name="sources"/>
+                     <Group name="filters"/>
+                 </ProxyGroupDomain>
+                 <DataTypeDomain name="input_type">
+                     <DataType value="vtkDataObject"/>
+                 </DataTypeDomain>
+             </InputProperty>
+
+         </SourceProxy>
+     </ProxyGroup>
+ </ServerManagerConfiguration>

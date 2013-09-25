@@ -1,0 +1,42 @@
+<!--
+ * =====================================================================================
+ *
+ *       Filename:  FlowMap.xml
+ *
+ *    Description:  Flow Map Plugin for ParaView - Server Manager Configuration
+ *
+ *        Version:  1.0
+ *        Created:  12/19/2012 01:46:02 AM
+ *       Revision:  none
+ *       Compiler:  gcc
+ *
+ *         Author:  Siavash Ameli
+ *   Organization:  University of Claifornia, Berkeley
+ *
+ * =====================================================================================
+ -->
+
+ <ServerManagerConfiguration>
+     <ProxyGroup name="filters">
+         <SourceProxy name="FlowMap" class="FlowMap" label="FlowMap">
+
+             <Documentation
+                 long_help="Integrates velocity field to trace particles."
+                 short_help="Advects particles in flow.">
+             </Documentation>
+
+             <InputProperty
+                 name="Input"
+                 command="SetInputConnection">
+                 <ProxyGroupDomain name="groups">
+                     <Group name="sources"/>
+                     <Group name="filters"/>
+                 </ProxyGroupDomain>
+                 <DataTypeDomain name="input_type">
+                     <DataType value="vtkDataObject"/>
+                 </DataTypeDomain>
+             </InputProperty>
+
+         </SourceProxy>
+     </ProxyGroup>
+ </ServerManagerConfiguration>
