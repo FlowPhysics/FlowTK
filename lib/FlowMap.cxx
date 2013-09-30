@@ -21,6 +21,8 @@
 // =======
 
 #include <FlowMap.h>
+#include <Seed.h>
+#include <Interpolator.h>
 
 // Pipeline
 #include <vtkInformation.h>
@@ -719,7 +721,53 @@ int FlowMap::RequestData(
         this->UpdateInputInformation(inputInfo0,outputInfo);
         
         // Continue Processing
-        request->Set(vtkStreamingDemandDrivenPipeline::CONTINUE_EXECUTING(),1);
+        // request->Set(vtkStreamingDemandDrivenPipeline::CONTINUE_EXECUTING(),1);
+
+        // TEST Interpolator //
+        vtkAlgorithm *InterpolatorAlgorithm = this->GetInputAlgorithm(0,0);
+        Interpolator *InterpolatorFilter = Interpolator::SafeDownCast(InterpolatorAlgorithm);
+        std::cout << "Name: " << InterpolatorFilter->GetClassName() << std::endl;
+        vtkExecutive *InterpolatorExecutive = InterpolatorFilter->GetExecutive();
+        vtkInformationVector *InterpolatorOutputInfoVector = InterpolatorExecutive->GetOutputInformation();
+        vtkInformation *InterpolatorOutputInfo = InterpolatorOutputInfoVector->GetInformationObject(0);
+        vtkDataObject *InterpolatorOutputDataObject = InterpolatorOutputInfo->Get(vtkDataObject::DATA_OBJECT());
+        vtkMultiBlockDataSet *MultiBlockDataSet = vtkMultiBlockDataSet::SafeDownCast(InterpolatorOutputDataObject);
+        vtkPolyData *InterpolatorTracer = vtkPolyData::SafeDownCast(MultiBlockDataSet->GetBlock(0));
+        std::cout << "Numer of points: " << InterpolatorTracer->GetNumberOfPoints() << std::endl;
+
+        InterpolatorFilter->UpdateInformation();
+        InterpolatorFilter->UpdateWholeExtent();
+        InterpolatorFilter->Modified();
+        std::cout << "Interpolator before update" << std::endl;
+        InterpolatorFilter->Update(0);
+        std::cout << "Interpolator after update" << std::endl;
+        InterpolatorFilter->PrintTest();
+
+        // Test Seed //
+        vtkAlgorithm *SeedAlgorithm = this->GetInputAlgorithm(1,0);
+        Seed *SeedFilter = Seed::SafeDownCast(SeedAlgorithm);
+        // Seed *SeedFilter = SeedAlgorithm;
+        std::cout << "Name: " << SeedFilter->GetClassName() << std::endl;
+        vtkExecutive *SeedExecutive = SeedFilter->GetExecutive();
+        vtkInformation *SeedInputInfo = SeedExecutive->GetInputInformation(0,0);
+        vtkInformation *SeedOutputInfo = SeedExecutive->GetOutputInformation(0);
+
+        // Make change in input information
+        double *SeedUpdateTimeSteps = SeedInputInfo->Get(FilterInformation::UPDATE_TIME_STEPS());
+        std::cout << "Seed update time steps: " << SeedUpdateTimeSteps[0] << std::endl;
+        SeedUpdateTimeSteps[0] = 2;
+
+
+        std::cout << "Seed before update" << std::endl;
+        SeedFilter->UpdateWholeExtent();
+        SeedFilter->UpdateInformation();
+        SeedFilter->Update();
+        std::cout << "Seed after update" << std::endl;
+        SeedFilter->PrintTest();
+
+
+
+
     }
     else
     {

@@ -680,6 +680,8 @@ int Seed::RequestUpdateExtent(
     double *UpdateTimeSteps = &TimeSteps[0];
     unsigned int UpdateTimeStepsLength = 1;
 
+    DISPLAY(UpdateTimeSteps,UpdateTimeStepsLength);
+
     // Set UpdateTimeSteps
     inputInfo->Set(FilterInformation::UPDATE_TIME_STEPS(),UpdateTimeSteps,UpdateTimeStepsLength);
 
@@ -771,9 +773,6 @@ int Seed::RequestData(
 
     // Convert StructuredPoints output to StructuredGrid output
     Seed::ConvertStructuredPointsToStructuredGrid(StructuredPointsOutput,output);
-
-    DISPLAY(output->GetNumberOfPoints());
-    DISPLAY(output->GetClassName());
 
     if(output->GetNumberOfPoints() > 0)
     {

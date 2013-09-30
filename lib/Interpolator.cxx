@@ -630,6 +630,9 @@ int Interpolator::RequestData(
     else if(output->GetNumberOfPoints() < 1)
     {
         // No point to Interpolate
+        HERE
+        vtkDataObject *OutputBlock = output->GetBlock(0);
+        OutputBlock = NULL;
         return 1;
     }
 
@@ -647,7 +650,7 @@ int Interpolator::RequestData(
             TimeSteps,TimeStepsLength,
             UpdateTimeSteps,UpdateTimeStepsLength);
 
-    // output->ShallowCopy(vtkDataSet::SafeDownCast(input->GetBlock(0)));
+    output->ShallowCopy(vtkDataSet::SafeDownCast(input->GetBlock(0)));
 
     return 1;
 }

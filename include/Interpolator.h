@@ -24,7 +24,7 @@
 // =======
 
 // Complete types
-#include <vtkUnstructuredGridAlgorithm.h>
+#include <vtkDataSetAlgorithm.h>
 #include <BaseFilter.h>
 #include <vtkInformation.h>
 
@@ -52,13 +52,14 @@ enum GridType
 // Class Interpolator
 // ==================
 
-class Interpolator : public vtkUnstructuredGridAlgorithm, public BaseFilter
+class Interpolator : public vtkDataSetAlgorithm, public BaseFilter
 {
     public:
         static Interpolator * New();
-        vtkTypeRevisionMacro(Interpolator,vtkUnstructuredGridAlgorithm);
+        vtkTypeRevisionMacro(Interpolator,vtkDataSetAlgorithm);
         virtual void PrintSelf(ostream &os,vtkIndent indent);
         inline static const char * GetFilterName() { return "Interpolator"; }
+        void PrintTest() { std::cout << "This is test for Interpolator." << std::endl; }
 
         // Accessors, Mutators
         vtkGetMacro(SnapToTimeStepTolerance,double);

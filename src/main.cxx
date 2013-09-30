@@ -100,6 +100,8 @@ int main(int argc,char *argv[])
     interpolator->SetInputConnection(0,reader->GetOutputPort(0));
     interpolator->DebuggerOn();
     interpolator->DisplayOn();
+    interpolator->ProgressOn();
+    interpolator->SetProgressSpeed(1);
     // */
 
     // /*
