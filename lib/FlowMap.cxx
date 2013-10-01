@@ -735,13 +735,28 @@ int FlowMap::RequestData(
         vtkPolyData *InterpolatorTracer = vtkPolyData::SafeDownCast(MultiBlockDataSet->GetBlock(0));
         std::cout << "Numer of points: " << InterpolatorTracer->GetNumberOfPoints() << std::endl;
 
+        // Streaming
+        vtkStreamingDemandDrivenPipeline *InterpolatorStreamingExecutive = vtkStreamingDemandDrivenPipeline::SafeDownCast(InterpolatorExecutive);
+
         InterpolatorFilter->UpdateInformation();
         InterpolatorFilter->UpdateWholeExtent();
-        InterpolatorFilter->Modified();
-        std::cout << "Interpolator before update" << std::endl;
-        InterpolatorFilter->Update(0);
+        std::cout << "Interpolator before modified" << std::endl;
+        std::cout << "\tInterpolator MTime: " << InterpolatorFilter->GetMTime() << std::endl;
+        std::cout << "\tInterpolator Executive MTime: " << InterpolatorExecutive->GetMTime() << std::endl;
+
+        // Should not change MTime
+        // InterpolatorFilter->Modified();
+
+        std::cout << "Interpolator after modified." << std::endl;
+        std::cout << "\tInterpolator MTime: " << InterpolatorFilter->GetMTime() << std::endl;
+        std::cout << "\tInterpolator Executive MTime: " << InterpolatorExecutive->GetMTime() << std::endl;
+
+        InterpolatorStreamingExecutive->Update();
+        // InterpolatorFilter->Update(0);
+
         std::cout << "Interpolator after update" << std::endl;
-        InterpolatorFilter->PrintTest();
+        std::cout << "\tInterpolator MTime: " << InterpolatorFilter->GetMTime() << std::endl;
+        std::cout << "\tInterpolator Executive MTime: " << InterpolatorExecutive->GetMTime() << std::endl;
 
         // Test Seed //
         vtkAlgorithm *SeedAlgorithm = this->GetInputAlgorithm(1,0);
@@ -752,18 +767,29 @@ int FlowMap::RequestData(
         vtkInformation *SeedInputInfo = SeedExecutive->GetInputInformation(0,0);
         vtkInformation *SeedOutputInfo = SeedExecutive->GetOutputInformation(0);
 
+        // Streaming
+        vtkStreamingDemandDrivenPipeline *SeedStreamingExecutive = vtkStreamingDemandDrivenPipeline::SafeDownCast(SeedExecutive);
+
         // Make change in input information
         double *SeedUpdateTimeSteps = SeedInputInfo->Get(FilterInformation::UPDATE_TIME_STEPS());
         std::cout << "Seed update time steps: " << SeedUpdateTimeSteps[0] << std::endl;
         SeedUpdateTimeSteps[0] = 2;
 
+        std::cout << "Seed before update: " << std::endl;
+        std::cout << "Seed MTime: " << SeedFilter->GetMTime() << std::endl;
+        std::cout << "Seed Executive MTime: " << SeedFilter->GetExecutive()->GetMTime() << std::endl;
 
         std::cout << "Seed before update" << std::endl;
         SeedFilter->UpdateWholeExtent();
         SeedFilter->UpdateInformation();
-        SeedFilter->Update();
+
+        // Better
+        SeedStreamingExecutive()->Update();
+        // SeedFilter->Update();
+        //
         std::cout << "Seed after update" << std::endl;
-        SeedFilter->PrintTest();
+        std::cout << "Seed MTime: " << SeedFilter->GetMTime() << std::endl;
+        std::cout << "Seed Executive MTime: " << SeedFilter->GetExecutive()->GetMTime() << std::endl;
 
 
 

@@ -58,7 +58,6 @@ class Seed : public vtkDataSetAlgorithm, public BaseFilter
         vtkTypeRevisionMacro(Seed,vtkDataSetAlgorithm);
         virtual void PrintSelf(ostream &os,vtkIndent indent);
         inline static const char * GetFilterName() { return "Seed"; }
-        void PrintTest() { std::cout << "This is test for Seed." << std::endl; }
 
         // Accessors, Mutators
         int * GetResolution() const;
