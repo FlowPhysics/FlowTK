@@ -698,10 +698,6 @@ int Seed::RequestData(
         vtkInformationVector **inputVector,
         vtkInformationVector *outputVector)
 {
-    // Test
-    std::cout << "Seed inside RequestData" << std::endl;
-    std::cout << "\tSeed MTime: " << this->GetMTime() << std::endl;
-    std::cout << "\tSeed Executive MTime: " << this->GetExecutive()->GetMTime() << std::endl;
     // Input
     vtkInformation *inputInfo = inputVector[0]->GetInformationObject(0);
     vtkDataObject *InputDataObject = inputInfo->Get(vtkDataObject::DATA_OBJECT());

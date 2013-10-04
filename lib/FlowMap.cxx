@@ -576,6 +576,13 @@ int FlowMap::RequestUpdateExtent(
 // Update Input Information
 // ========================
 
+// Without argument
+void FlowMap::UpdateInputInformation()
+{
+
+}
+
+// With argument
 void FlowMap::UpdateInputInformation(
         vtkInformation *inputInfo,
         vtkInformation *outputInfo)
@@ -624,7 +631,7 @@ void FlowMap::UpdateInputDataObject()
     // Check if Traces as defined
     if(this->Tracers == NULL)
     {
-        // this->InitializeTracers();
+        this->InitializeTracers();
     }
     else if(this->Tracers->GetNumberOfPoints() == 0)
     {
@@ -661,6 +668,31 @@ void FlowMap::UpdateInputDataObject(vtkDataObject *UpdateDataObject)
     InputMultiBlockData->SetBlock(0,UpdatePolyData);
 }
 
+// ===================
+// Update Input Filter
+// ===================
+
+void FlowMap::UpdateInputFilter()
+{
+    // Get Interpolator
+    int InterpolatorPort = 0;
+    int InterpolatorConnection = 0;
+    vtkAlgorithm *InterpolatorAlgorithm = this->GetInputAlgorithm(InterpolatorPort,InterpolatorConnection);
+    vtkDataSetAlgorithm *Interpolator = vtkDataSetAlgorithm::SafeDownCast(InterpolatorAlgorithm);
+
+    // Update FlowMap's Input Data Object
+    this->UpdateInputDataObject();
+
+    // Update FlowMap's Input Information
+    this->UpdateInputInformation();
+
+    // Modify MTime
+    Interpolator->Modified();
+
+    // Update Interpolator
+    Interpolator->Update();
+}
+
 // ============
 // Request Data
 // ============
@@ -674,22 +706,22 @@ int FlowMap::RequestData(
     vtkInformation *inputInfo0 = inputVector[0]->GetInformationObject(0);
     vtkPolyData *input0 = vtkPolyData::SafeDownCast(inputInfo0->Get(vtkDataObject::DATA_OBJECT()));
 
-    // Input 1 - From Seed
-    vtkInformation *inputInfo1 = inputVector[1]->GetInformationObject(0);
-    vtkStructuredGrid *input1 = vtkStructuredGrid::SafeDownCast(inputInfo1->Get(vtkDataObject::DATA_OBJECT()));
+    // // Input 1 - From Seed
+    // vtkInformation *inputInfo1 = inputVector[1]->GetInformationObject(0);
+    // vtkStructuredGrid *input1 = vtkStructuredGrid::SafeDownCast(inputInfo1->Get(vtkDataObject::DATA_OBJECT()));
 
-    if(input1 == NULL)
-    {
-        ERROR(<< "input1 is NULL");
-        vtkErrorMacro("input1 is NULL");
-        return 0;
-    }
-    else if(input1->GetNumberOfPoints() == 0)
-    {
-        ERROR(<< "Number of input1 points is zero.");
-        vtkErrorMacro("Number of input1 points is zero.");
-        return 0;
-    }
+    // if(input1 == NULL)
+    // {
+    //     ERROR(<< "input1 is NULL");
+    //     vtkErrorMacro("input1 is NULL");
+    //     return 0;
+    // }
+    // else if(input1->GetNumberOfPoints() == 0)
+    // {
+    //     ERROR(<< "Number of input1 points is zero.");
+    //     vtkErrorMacro("Number of input1 points is zero.");
+    //     return 0;
+    // }
 
     // Output
     vtkInformation *outputInfo = outputVector->GetInformationObject(0);
@@ -697,6 +729,7 @@ int FlowMap::RequestData(
 
     // Computation //
 
+    /*
     if(this->IntegrationTimeStepIndex == 0)
     {
         // 1- Initialization
@@ -716,81 +749,82 @@ int FlowMap::RequestData(
     // check for Process termination
     if(this->IntegrationTimeStepIndex < this->IntegrationTimeStepIndexMax)
     {
-        // Update input of port 0
-        this->UpdateInputDataObject();
-        this->UpdateInputInformation(inputInfo0,outputInfo);
-        
         // Continue Processing
         // request->Set(vtkStreamingDemandDrivenPipeline::CONTINUE_EXECUTING(),1);
 
-        // TEST Interpolator //
-        vtkAlgorithm *InterpolatorAlgorithm = this->GetInputAlgorithm(0,0);
-        Interpolator *InterpolatorFilter = Interpolator::SafeDownCast(InterpolatorAlgorithm);
-        std::cout << "Name: " << InterpolatorFilter->GetClassName() << std::endl;
-        vtkExecutive *InterpolatorExecutive = InterpolatorFilter->GetExecutive();
-        vtkInformationVector *InterpolatorOutputInfoVector = InterpolatorExecutive->GetOutputInformation();
-        vtkInformation *InterpolatorOutputInfo = InterpolatorOutputInfoVector->GetInformationObject(0);
-        vtkDataObject *InterpolatorOutputDataObject = InterpolatorOutputInfo->Get(vtkDataObject::DATA_OBJECT());
-        vtkMultiBlockDataSet *MultiBlockDataSet = vtkMultiBlockDataSet::SafeDownCast(InterpolatorOutputDataObject);
-        vtkPolyData *InterpolatorTracer = vtkPolyData::SafeDownCast(MultiBlockDataSet->GetBlock(0));
-        std::cout << "Numer of points: " << InterpolatorTracer->GetNumberOfPoints() << std::endl;
+        // // TEST Interpolator //
+        // vtkAlgorithm *InterpolatorAlgorithm = this->GetInputAlgorithm(0,0);
+        // Interpolator *InterpolatorFilter = Interpolator::SafeDownCast(InterpolatorAlgorithm);
+        // std::cout << "Name: " << InterpolatorFilter->GetClassName() << std::endl;
+        // vtkExecutive *InterpolatorExecutive = InterpolatorFilter->GetExecutive();
+        // vtkInformationVector *InterpolatorOutputInfoVector = InterpolatorExecutive->GetOutputInformation();
+        // vtkInformation *InterpolatorOutputInfo = InterpolatorOutputInfoVector->GetInformationObject(0);
+        // vtkDataObject *InterpolatorOutputDataObject = InterpolatorOutputInfo->Get(vtkDataObject::DATA_OBJECT());
+        // vtkMultiBlockDataSet *MultiBlockDataSet = vtkMultiBlockDataSet::SafeDownCast(InterpolatorOutputDataObject);
+        // vtkPolyData *InterpolatorTracer = vtkPolyData::SafeDownCast(MultiBlockDataSet->GetBlock(0));
+        // std::cout << "Numer of points: " << InterpolatorTracer->GetNumberOfPoints() << std::endl;
 
-        // Streaming
-        vtkStreamingDemandDrivenPipeline *InterpolatorStreamingExecutive = vtkStreamingDemandDrivenPipeline::SafeDownCast(InterpolatorExecutive);
+        // // Streaming
+        // vtkStreamingDemandDrivenPipeline *InterpolatorStreamingExecutive = vtkStreamingDemandDrivenPipeline::SafeDownCast(InterpolatorExecutive);
 
-        InterpolatorFilter->UpdateInformation();
-        InterpolatorFilter->UpdateWholeExtent();
-        std::cout << "Interpolator before modified" << std::endl;
-        std::cout << "\tInterpolator MTime: " << InterpolatorFilter->GetMTime() << std::endl;
-        std::cout << "\tInterpolator Executive MTime: " << InterpolatorExecutive->GetMTime() << std::endl;
+        // InterpolatorFilter->UpdateInformation();
+        // InterpolatorFilter->UpdateWholeExtent();
+        // std::cout << "Interpolator before modified" << std::endl;
+        // std::cout << "\tInterpolator MTime: " << InterpolatorFilter->GetMTime() << std::endl;
+        // std::cout << "\tInterpolator Executive MTime: " << InterpolatorExecutive->GetMTime() << std::endl;
+        // std::cout << "\tInterpolatoe Pipeline MTime: " << InterpolatorStreamingExecutive->GetPipelineMTime() << std::endl;
 
-        // Should not change MTime
+        // // Should not change MTime
         // InterpolatorFilter->Modified();
 
-        std::cout << "Interpolator after modified." << std::endl;
-        std::cout << "\tInterpolator MTime: " << InterpolatorFilter->GetMTime() << std::endl;
-        std::cout << "\tInterpolator Executive MTime: " << InterpolatorExecutive->GetMTime() << std::endl;
+        // std::cout << "Interpolator after modified." << std::endl;
+        // std::cout << "\tInterpolator MTime: " << InterpolatorFilter->GetMTime() << std::endl;
+        // std::cout << "\tInterpolator Executive MTime: " << InterpolatorExecutive->GetMTime() << std::endl;
+        // std::cout << "\tInterpolatoe Pipeline MTime: " << InterpolatorStreamingExecutive->GetPipelineMTime() << std::endl;
 
-        InterpolatorStreamingExecutive->Update();
+        // // InterpolatorStreamingExecutive->Update();
         // InterpolatorFilter->Update(0);
 
-        std::cout << "Interpolator after update" << std::endl;
-        std::cout << "\tInterpolator MTime: " << InterpolatorFilter->GetMTime() << std::endl;
-        std::cout << "\tInterpolator Executive MTime: " << InterpolatorExecutive->GetMTime() << std::endl;
+        // std::cout << "Interpolator after update" << std::endl;
+        // std::cout << "\tInterpolator MTime: " << InterpolatorFilter->GetMTime() << std::endl;
+        // std::cout << "\tInterpolator Executive MTime: " << InterpolatorExecutive->GetMTime() << std::endl;
+        // std::cout << "\tInterpolatoe Pipeline MTime: " << InterpolatorStreamingExecutive->GetPipelineMTime() << std::endl;
 
-        // Test Seed //
-        vtkAlgorithm *SeedAlgorithm = this->GetInputAlgorithm(1,0);
-        Seed *SeedFilter = Seed::SafeDownCast(SeedAlgorithm);
-        // Seed *SeedFilter = SeedAlgorithm;
-        std::cout << "Name: " << SeedFilter->GetClassName() << std::endl;
-        vtkExecutive *SeedExecutive = SeedFilter->GetExecutive();
-        vtkInformation *SeedInputInfo = SeedExecutive->GetInputInformation(0,0);
-        vtkInformation *SeedOutputInfo = SeedExecutive->GetOutputInformation(0);
+        // // Test Seed //
+        // vtkAlgorithm *SeedAlgorithm = this->GetInputAlgorithm(1,0);
+        // Seed *SeedFilter = Seed::SafeDownCast(SeedAlgorithm);
+        // // Seed *SeedFilter = SeedAlgorithm;
+        // std::cout << "Name: " << SeedFilter->GetClassName() << std::endl;
+        // vtkExecutive *SeedExecutive = SeedFilter->GetExecutive();
+        // vtkInformation *SeedInputInfo = SeedExecutive->GetInputInformation(0,0);
+        // vtkInformation *SeedOutputInfo = SeedExecutive->GetOutputInformation(0);
 
-        // Streaming
-        vtkStreamingDemandDrivenPipeline *SeedStreamingExecutive = vtkStreamingDemandDrivenPipeline::SafeDownCast(SeedExecutive);
+        // // Streaming
+        // vtkStreamingDemandDrivenPipeline *SeedStreamingExecutive = vtkStreamingDemandDrivenPipeline::SafeDownCast(SeedExecutive);
 
-        // Make change in input information
-        double *SeedUpdateTimeSteps = SeedInputInfo->Get(FilterInformation::UPDATE_TIME_STEPS());
-        std::cout << "Seed update time steps: " << SeedUpdateTimeSteps[0] << std::endl;
-        SeedUpdateTimeSteps[0] = 2;
+        // // Make change in input information
+        // double *SeedUpdateTimeSteps = SeedInputInfo->Get(FilterInformation::UPDATE_TIME_STEPS());
+        // std::cout << "Seed update time steps: " << SeedUpdateTimeSteps[0] << std::endl;
+        // SeedUpdateTimeSteps[0] = 2;
 
-        std::cout << "Seed before update: " << std::endl;
-        std::cout << "Seed MTime: " << SeedFilter->GetMTime() << std::endl;
-        std::cout << "Seed Executive MTime: " << SeedFilter->GetExecutive()->GetMTime() << std::endl;
+        // std::cout << "Seed before update: " << std::endl;
+        // std::cout << "Seed MTime: " << SeedFilter->GetMTime() << std::endl;
+        // std::cout << "Seed Executive MTime: " << SeedFilter->GetExecutive()->GetMTime() << std::endl;
+        // std::cout << "\tSeed Pipeline MTime: " << SeedStreamingExecutive->GetPipelineMTime() << std::endl;
 
-        std::cout << "Seed before update" << std::endl;
-        SeedFilter->UpdateWholeExtent();
-        SeedFilter->UpdateInformation();
+        // std::cout << "Seed before update" << std::endl;
+        // // SeedFilter->UpdateWholeExtent();
+        // // SeedFilter->UpdateInformation();
 
-        // Better
-        SeedStreamingExecutive()->Update();
-        // SeedFilter->Update();
-        //
-        std::cout << "Seed after update" << std::endl;
-        std::cout << "Seed MTime: " << SeedFilter->GetMTime() << std::endl;
-        std::cout << "Seed Executive MTime: " << SeedFilter->GetExecutive()->GetMTime() << std::endl;
-
+        // // Better
+        // SeedStreamingExecutive->Update();
+        // // SeedFilter->Update();
+        // //
+        // std::cout << "Seed after update" << std::endl;
+        // std::cout << "Seed MTime: " << SeedFilter->GetMTime() << std::endl;
+        // std::cout << "Seed Executive MTime: " << SeedFilter->GetExecutive()->GetMTime() << std::endl;
+        // std::cout << "\tSeed Pipeline MTime: " << SeedStreamingExecutive->GetPipelineMTime() << std::endl;
+        this->UpdateInputFilter();
 
 
 
@@ -801,14 +835,23 @@ int FlowMap::RequestData(
         this->PostProcessingTracers(input0,input1,output);
 
         // Terminate Run
-        request->Remove(vtkStreamingDemandDrivenPipeline::CONTINUE_EXECUTING());
+        // request->Remove(vtkStreamingDemandDrivenPipeline::CONTINUE_EXECUTING());
 
         // Reset Integration Counter
         this->IntegrationTimeStepIndex = 0;
     }
+    */
+
+    // Initialization //
+
+    // Initialize time indices
+    this->InitializeTimeIndices(inputInfo0);
+
+    // Initialize Integrator Coefficients
+    this->InitializeIntegratorCoefficients();
 
     // Update output
-    output->ShallowCopy(input1);
+    // output->ShallowCopy(input1);
 
     DEBUG(<< "Success");
     return 1;
@@ -1034,6 +1077,52 @@ void  FlowMap::RungeKuttaCoefficients(RationalNumber *RationalCoefficients, unsi
 // Initialize Tracers
 // ==================
 
+// Without argument
+void FlowMap::InitializeTracers()
+{
+    // Seed Input Port/Connection
+    unsigned int SeedFilterPort = 1;
+    unsigned int SeedFilterConnection = 0;
+
+    // Filter's Input Information
+    vtkInformation *InputInformation = this->GetInputInformation(SeedFilterPort,SeedFilterConnection);
+
+    // Filter's Input DataObject
+    vtkDataObject *SeedDataObject = InputInformation->Get(vtkDataObject::DATA_OBJECT());
+
+    // Seed's StructuredGrid output
+    vtkStructuredGrid *SeedGrid = vtkStructuredGrid::SafeDownCast(SeedDataObject);
+
+    // Check Seed Grid
+    if(SeedGrid == NULL || SeedGrid->GetNumberOfPoints() < 1)
+    {
+        // Prepare Seed Grid //
+
+        // Get Seed Filter
+        vtkAlgorithm *SeedAlgorithm = this->GetInputAlgorithm(SeedFilterPort,SeedFilterConnection);
+
+        // Cast to Seed DaataSet Algorithm
+        vtkDataSetAlgorithm *SeedFilter = vtkDataSetAlgorithm::SafeDownCast(SeedAlgorithm);
+
+        // Modify Seed MTime
+        SeedFilter->Modified();
+
+        // Update Seed
+        SeedFilter->Update();
+    }
+
+    // Check Seed Grid again
+    if(SeedGrid == NULL || SeedGrid->GetNumberOfPoints() < 1)
+    {
+        ERROR(<< "SeedGrid is empty or has no points.");
+        vtkErrorMacro("SeedGrid is empty or has no points.");
+    }
+
+    // Initialize Tracers
+    this->InitializeTracers(SeedGrid);
+}
+
+// With argument
 void FlowMap::InitializeTracers(vtkStructuredGrid *SeedGrid)
 {
     // Initialize Tracers

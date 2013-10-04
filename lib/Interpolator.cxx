@@ -592,10 +592,6 @@ int Interpolator::RequestData(
         vtkInformationVector **inputVector,
         vtkInformationVector *outputVector)
 {
-    // Test
-    std::cout << "Interpolator inside RequestData" << std::endl;
-    std::cout << "\tInterpolator MTime: " << this->GetMTime() << std::endl;
-    std::cout << "\tInterpolator Executive MTime: " << this->GetExecutive()->GetMTime() << std::endl;
     // Input
     vtkInformation *inputInfo = inputVector[0]->GetInformationObject(0);
     vtkMultiBlockDataSet *input = vtkMultiBlockDataSet::SafeDownCast(inputInfo->Get(vtkDataObject::DATA_OBJECT()));
@@ -633,10 +629,12 @@ int Interpolator::RequestData(
     }
     else if(output->GetNumberOfPoints() < 1)
     {
-        // No point to Interpolate
+        // Test
         HERE
         vtkDataObject *OutputBlock = output->GetBlock(0);
         OutputBlock = NULL;
+
+        // No point to Interpolate
         return 1;
     }
 
