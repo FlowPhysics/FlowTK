@@ -377,7 +377,7 @@ if(${GENERATE_PACKAGE})
 
     # Cpack variables
     set(CPACK_PACKAGE_NAME ${PACKAGE_NAME})
-    set(CPACK_PACKAGE_CONTACT "sameli@iit.edu")
+    set(CPACK_PACKAGE_CONTACT "sameli@berkeley.edu")
     set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "i386")
     set(CPACK_PACKAGE_VERSION_MAJOR 1)
     set(CPACK_PACKAGE_VERSION_MINOR 0)

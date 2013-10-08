@@ -693,6 +693,80 @@ void FlowMap::UpdateInputFilter()
     Interpolator->Update();
 }
 
+// ======================
+// Set Output Data Object
+// ======================
+
+void FlowMap::SetOutputDataObject(
+        vtkDataObject *SeedGridDataObject,
+        vtkDataObject *TracersDataObject)
+{
+    // Seed Grid
+    vtkDataSet *SeedGrid = vtkDataSet::SafeDownCast(TracersDataObject);
+
+    // Tracers PolyData
+    vtkPolyData *TracersPolyData = vtkPolyData::SafeDownCast(TracersDataObject);
+
+    // Convert Tracers PolyData to Double Array
+    vtkDoubleArray *TracersDataArray = vtkDoubleArray::New();
+    this->ConvertPolyDataToDataArray(TracersPolyData,TracersDataArray);
+
+    // 
+
+
+
+
+    // Get output Information
+    int OutputPort = 0;
+    vtkInformation *OutputInfo = this->GetOutputPortInformation(OutputPort);
+
+    // Set output data object
+    OutputInfo->Set(vtkDataObject::DATA_OBJECT(),OutputDataObject);
+}
+
+// ==============================
+// Convert PolyData to Data Array
+// ==============================
+
+void FlowMap::ConvertPolyDataToDataArray(
+        vtkPolyData *PolyData,
+        vtkDataArray *DataArray)
+{
+    // Default dimension
+    unsigned int PointsDimension = 3;
+
+    // Get Number of Points
+    unsigned int NumberOfPoints = PolyData->GetNumberOfPoints();
+
+    // Check PolyData
+    if(NumberOfPoints < 1)
+    {
+        ERROR(<< "PolyData has no point.");
+        vtkErrorMacro("PolyData has no point.");
+    }
+
+    // Cast DataArray to Double Array
+    vtkDoubleArray *DoubleArray = vtkDoubleArray::SafeDownCast(DataArray);
+
+    // Set DataArray
+    DoubleArray->SetNumberOfComponents(PointsDimension)I;
+    DoubleArray->SetNumberOfTuples(NumberOfPoints);
+    DoubleArray->SetName("Tracers");
+
+    // Get Points form PolyData
+    vtkPoints *Points = PolyData->GetPoints();
+
+    // Convert points to doubles
+    for(unsigned int PointIterator = 0; PointIterator < NumberOfPoints; PointIterator++)
+    {
+        // Get a point as double
+        double *DoublePoint = Points->GetPoint(PointIterator);
+
+        // Set Double Array
+        DoubleArray->SetTupleValue(PointIterator,DoublePoint);
+    }
+}
+
 // ============
 // Request Data
 // ============
@@ -704,7 +778,7 @@ int FlowMap::RequestData(
 {
     // Input 0 - From Interpolator
     vtkInformation *inputInfo0 = inputVector[0]->GetInformationObject(0);
-    vtkPolyData *input0 = vtkPolyData::SafeDownCast(inputInfo0->Get(vtkDataObject::DATA_OBJECT()));
+    vtkPolyData *TracersData = vtkPolyData::SafeDownCast(inputInfo0->Get(vtkDataObject::DATA_OBJECT()));
 
     // // Input 1 - From Seed
     // vtkInformation *inputInfo1 = inputVector[1]->GetInformationObject(0);
@@ -850,8 +924,27 @@ int FlowMap::RequestData(
     // Initialize Integrator Coefficients
     this->InitializeIntegratorCoefficients();
 
+    // Initialize Integrator Coefficients
+    this->InitializeIntegratorCoefficients();
+
+    // Initialize Tracers
+    this->InitializeTracers();
+
+    // Time step index iteration
+    while(this->IntegrationTimeStepIndex < IntegrationTimeStepIndexMax)
+    {
+        // Acquire Tracers data
+        this->UpdateInputFilter();
+
+        // Integrate
+        this->AdvectTracers(TracersData);
+
+        // Update Progress
+        this->ProgressUpdate(this->IntegrationTimeStepIndex,IntegrationTimeStepIndexMax);
+    }
+
     // Update output
-    // output->ShallowCopy(input1);
+    output->SetOutputDataObject(TracersData);
 
     DEBUG(<< "Success");
     return 1;
@@ -1161,7 +1254,7 @@ void FlowMap::InitializeTracers(vtkStructuredGrid *SeedGrid)
 // Get Current Global Time
 // =======================
 
-double FlowMap::GetCurrentGlobalTime(double CurrentSeedReleaseGlobalTime)
+double FlowMap::GetCurrentGlobalTime(double CurrentSeedReleaseGlobalTime) const
 {
     double CurrentGlobalTime = CurrentSeedReleaseGlobalTime +
         this->IntegrationTimeStepIndex * IntegrationTimeStep;

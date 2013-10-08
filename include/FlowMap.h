@@ -132,6 +132,12 @@ class FlowMap : public vtkPolyDataAlgorithm, public BaseFilter
         void UpdateInputDataObject();
         void UpdateInputDataObject(vtkDataObject *InputDataObject);
         void UpdateInputFilter();
+        void SetOutputDataObject(
+                vtkDataObject *SeedGridDataObject,
+                vtkDataObject *TracersDataObject);
+        void ConvertPolyDataToDataArray(
+                vtkPolyData *PolyData,
+                vtkDataArray *DataArray);
 
         // Member Methods
         const char * IntegratorModeString(IntegratorModeType IntegratorMode);
@@ -142,9 +148,8 @@ class FlowMap : public vtkPolyDataAlgorithm, public BaseFilter
         void RungeKuttaCoefficients(RationalNumber *RationalCoefficients,unsigned int order);
         void InitializeTracers();
         void InitializeTracers(vtkStructuredGrid *input1);
-        double GetCurrentGlobalTime(double CurrentSeedReleaseGlobalTime);
+        double GetCurrentGlobalTime(double CurrentSeedReleaseGlobalTime) const;
         void AdvectTracers(vtkPolyData *TracerData);
-
         void PostProcessingTracers(
                 vtkPolyData *input0,
                 vtkStructuredGrid *input1,
