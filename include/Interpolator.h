@@ -58,7 +58,8 @@ class Interpolator : public vtkDataSetAlgorithm, public BaseFilter
         static Interpolator * New();
         vtkTypeRevisionMacro(Interpolator,vtkDataSetAlgorithm);
         virtual void PrintSelf(ostream &os,vtkIndent indent);
-        inline static const char * GetFilterName() { return "Interpolator"; }
+        virtual inline const char * GetFilterName() { return this->GetStaticFilterName(); }
+        static inline const char * GetStaticFilterName() { return "Interpolator"; }
 
         // Accessors, Mutators
         vtkGetMacro(SnapToTimeStepTolerance,double);

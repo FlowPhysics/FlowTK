@@ -50,7 +50,7 @@ class Reader : public vtkMultiBlockDataSetAlgorithm, public BaseFilter
         static Reader * New();
         vtkTypeRevisionMacro(Reader,vtkMultiBlockDataSetAlgorithm);
         virtual void PrintSelf(ostream &os,vtkIndent indent);
-        inline static const char * GetFilterName() { return "Reader"; }
+        virtual inline const char * GetFilterName() { return "Reader"; }
 
         // Accessors, Mutators
         vtkGetMacro(NumberOfFileSeries,unsigned int);

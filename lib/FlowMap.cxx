@@ -628,7 +628,7 @@ void FlowMap::UpdateInputInformation(
 // Without DataObject argument
 void FlowMap::UpdateInputDataObject()
 {
-    // Check if Traces as defined
+    // Check if Traces are defined
     if(this->Tracers == NULL)
     {
         this->InitializeTracers();
@@ -664,8 +664,53 @@ void FlowMap::UpdateInputDataObject(vtkDataObject *UpdateDataObject)
     // Cast Input DataObject to MultiBlock data
     vtkMultiBlockDataSet *InputMultiBlockData = vtkMultiBlockDataSet::SafeDownCast(InputDataObject);
 
+    /// TEST ///
+    
+    std::cout << "IN INPUT UPDATES" << std::endl;
+    if(InputMultiBlockData == NULL)
+    {
+        ERROR(<< "InputMultiBlockData is NULL.");
+    }
+    std::cout << "Number Of Blocks: " << InputMultiBlockData->GetNumberOfBlocks() << std::endl;
+
+    ////////////
+
     // Set Updated DataObject to input block DataSet
     InputMultiBlockData->SetBlock(0,UpdatePolyData);
+
+    ////////////
+
+    std::cout << "Number Of Blocks: " << InputMultiBlockData->GetNumberOfBlocks() << std::endl;
+    vtkPolyData *Test = vtkPolyData::SafeDownCast(InputMultiBlockData->GetBlock(0));
+    std::cout << "Number of points: " << Test->GetNumberOfPoints() << std::endl;
+
+    /// TEST  2 ///
+
+    vtkInformation *InputInformation2 = this->GetInputPortInformation(0);
+    if(InputInformation2 == NULL)
+    {
+        ERROR(<< "InputInformation2 is NULL");
+    }
+    vtkDataObject *InputDataObject2 = InputInformation2->Get(vtkDataObject::DATA_OBJECT());
+    if(InputDataObject2 == NULL)
+    {
+        ERROR(<< "InputDataObject2 is NULL");
+    }
+    vtkMultiBlockDataSet *InputMultiBlockData2 = vtkMultiBlockDataSet::SafeDownCast(InputDataObject2);
+    if(InputMultiBlockData2 == NULL)
+    {
+        ERROR(<< "InputMultiBlockData2 is NULL.");
+    }
+    std::cout << "NEW: Number of Blocks2: " << InputMultiBlockData2->GetNumberOfBlocks() << std::endl;
+    vtkPolyData *InputPolyData2 = vtkPolyData::SafeDownCast(InputMultiBlockData2->GetBlock(0));
+    if(InputPolyData2 == NULL)
+    {
+        ERROR(<< "InputPolyData2 is NULL");
+    }
+    std::cout << "New: Number of Points: " << InputPolyData2->GetNumberOfPoints() << std::endl;
+
+
+    ////////////
 }
 
 // ===================
@@ -674,17 +719,42 @@ void FlowMap::UpdateInputDataObject(vtkDataObject *UpdateDataObject)
 
 void FlowMap::UpdateInputFilter()
 {
+    // Update FlowMap's Input Data Object
+    this->UpdateInputDataObject();
+    HERE
+
+    /// TEST ///
+
+    vtkInformation *InputInformation = this->GetInputPortInformation(0);
+    vtkDataObject *InputDataObject = InputInformation->Get(vtkDataObject::DATA_OBJECT());
+    if(InputDataObject == NULL)
+    {
+        ERROR(<< "InputDataObject is NULL");
+    }
+    vtkMultiBlockDataSet *InputMultiBlockData = vtkMultiBlockDataSet::SafeDownCast(InputDataObject);
+    if(InputMultiBlockData == NULL)
+    {
+        ERROR(<< "InputMultiBlockData is NULL.");
+    }
+    std::cout << "NEW: Number of Blocks: " << InputMultiBlockData->GetNumberOfBlocks() << std::endl;
+    vtkPolyData *InputPolyData = vtkPolyData::SafeDownCast(InputMultiBlockData->GetBlock(0));
+    if(InputPolyData == NULL)
+    {
+        ERROR(<< "InputPolyData is NULL");
+    }
+    std::cout << "New: Number of Points: " << InputPolyData->GetNumberOfPoints() << std::endl;
+
+
+    ////////////
+
+    // Update FlowMap's Input Information
+    this->UpdateInputInformation();
+
     // Get Interpolator
     int InterpolatorPort = 0;
     int InterpolatorConnection = 0;
     vtkAlgorithm *InterpolatorAlgorithm = this->GetInputAlgorithm(InterpolatorPort,InterpolatorConnection);
     vtkDataSetAlgorithm *Interpolator = vtkDataSetAlgorithm::SafeDownCast(InterpolatorAlgorithm);
-
-    // Update FlowMap's Input Data Object
-    this->UpdateInputDataObject();
-
-    // Update FlowMap's Input Information
-    this->UpdateInputInformation();
 
     // Modify MTime
     Interpolator->Modified();
@@ -701,27 +771,26 @@ void FlowMap::SetOutputDataObject(
         vtkDataObject *SeedGridDataObject,
         vtkDataObject *TracersDataObject)
 {
-    // Seed Grid
+    // Cast Seed Grid to DataSet
     vtkDataSet *SeedGrid = vtkDataSet::SafeDownCast(TracersDataObject);
 
-    // Tracers PolyData
+    // Cast Tracers to PolyData
     vtkPolyData *TracersPolyData = vtkPolyData::SafeDownCast(TracersDataObject);
 
     // Convert Tracers PolyData to Double Array
     vtkDoubleArray *TracersDataArray = vtkDoubleArray::New();
     this->ConvertPolyDataToDataArray(TracersPolyData,TracersDataArray);
 
-    // 
-
-
-
+    // Add DataArray to SeedGrid as vector attribute
+    SeedGrid->GetPointData()->SetVectors(TracersDataArray);
+    SeedGrid->GetPointData()->SetActiveVectors(TracersDataArray->GetName());
 
     // Get output Information
     int OutputPort = 0;
     vtkInformation *OutputInfo = this->GetOutputPortInformation(OutputPort);
 
     // Set output data object
-    OutputInfo->Set(vtkDataObject::DATA_OBJECT(),OutputDataObject);
+    OutputInfo->Set(vtkDataObject::DATA_OBJECT(),SeedGrid);
 }
 
 // ==============================
@@ -733,7 +802,7 @@ void FlowMap::ConvertPolyDataToDataArray(
         vtkDataArray *DataArray)
 {
     // Default dimension
-    unsigned int PointsDimension = 3;
+    unsigned int PointsDimension = this->Dimension;
 
     // Get Number of Points
     unsigned int NumberOfPoints = PolyData->GetNumberOfPoints();
@@ -749,12 +818,16 @@ void FlowMap::ConvertPolyDataToDataArray(
     vtkDoubleArray *DoubleArray = vtkDoubleArray::SafeDownCast(DataArray);
 
     // Set DataArray
-    DoubleArray->SetNumberOfComponents(PointsDimension)I;
+    DoubleArray->SetNumberOfComponents(PointsDimension);
     DoubleArray->SetNumberOfTuples(NumberOfPoints);
     DoubleArray->SetName("Tracers");
 
     // Get Points form PolyData
     vtkPoints *Points = PolyData->GetPoints();
+
+    // Set Progress
+    this->ProgressReset();
+    this->SetProgressMessage("Save output");
 
     // Convert points to doubles
     for(unsigned int PointIterator = 0; PointIterator < NumberOfPoints; PointIterator++)
@@ -762,9 +835,30 @@ void FlowMap::ConvertPolyDataToDataArray(
         // Get a point as double
         double *DoublePoint = Points->GetPoint(PointIterator);
 
-        // Set Double Array
-        DoubleArray->SetTupleValue(PointIterator,DoublePoint);
+        // Dimension consideratrion
+        if(PointsDimension == 2)
+        {
+            // Set Double Array
+            DoubleArray->SetTuple2(PointIterator,DoublePoint[0],DoublePoint[1]);
+        }
+        else if(PointsDimension == 3)
+        {
+            // Set Double Array
+            DoubleArray->SetTupleValue(PointIterator,DoublePoint);
+        }
+        else
+        {
+            ERROR(<< "Dimension is not supported.");
+            vtkErrorMacro("Dimension is not supported.");
+            break;
+        }
+
+        // Update progress
+        this->ProgressUpdate(PointIterator,NumberOfPoints);
     }
+
+    // Reset progress
+    this->ProgressReset();
 }
 
 // ============
@@ -780,28 +874,26 @@ int FlowMap::RequestData(
     vtkInformation *inputInfo0 = inputVector[0]->GetInformationObject(0);
     vtkPolyData *TracersData = vtkPolyData::SafeDownCast(inputInfo0->Get(vtkDataObject::DATA_OBJECT()));
 
-    // // Input 1 - From Seed
-    // vtkInformation *inputInfo1 = inputVector[1]->GetInformationObject(0);
-    // vtkStructuredGrid *input1 = vtkStructuredGrid::SafeDownCast(inputInfo1->Get(vtkDataObject::DATA_OBJECT()));
+    // Input 1 - From Seed
+    vtkInformation *inputInfo1 = inputVector[1]->GetInformationObject(0);
+    vtkStructuredGrid *SeedGrid = vtkStructuredGrid::SafeDownCast(inputInfo1->Get(vtkDataObject::DATA_OBJECT()));
 
-    // if(input1 == NULL)
-    // {
-    //     ERROR(<< "input1 is NULL");
-    //     vtkErrorMacro("input1 is NULL");
-    //     return 0;
-    // }
-    // else if(input1->GetNumberOfPoints() == 0)
-    // {
-    //     ERROR(<< "Number of input1 points is zero.");
-    //     vtkErrorMacro("Number of input1 points is zero.");
-    //     return 0;
-    // }
+    if(SeedGrid == NULL)
+    {
+        ERROR(<< "Seed Grid is NULL");
+        vtkErrorMacro("Seed Grid is NULL");
+        return 0;
+    }
+    else if(SeedGrid->GetNumberOfPoints() == 0)
+    {
+        ERROR(<< "Number of Seed Grid points is zero.");
+        vtkErrorMacro("Number of Seed Grid points is zero.");
+        return 0;
+    }
 
     // Output
     vtkInformation *outputInfo = outputVector->GetInformationObject(0);
     vtkStructuredGrid *output = vtkStructuredGrid::SafeDownCast(outputInfo->Get(vtkDataObject::DATA_OBJECT()));
-
-    // Computation //
 
     /*
     if(this->IntegrationTimeStepIndex == 0)
@@ -930,11 +1022,40 @@ int FlowMap::RequestData(
     // Initialize Tracers
     this->InitializeTracers();
 
+    // Advecting Tracers //
+
+    // Set Progress
+    this->ProgressReset();
+    this->SetProgressMessage("Integration steps");
+
     // Time step index iteration
     while(this->IntegrationTimeStepIndex < IntegrationTimeStepIndexMax)
     {
         // Acquire Tracers data
+        HERE
+
+        /// TEST ///
+
+        vtkInformation *InputInformation = this->GetInputPortInformation(0);
+        vtkDataObject *InputDataObject = InputInformation->Get(vtkDataObject::DATA_OBJECT());
+        HERE
+        vtkMultiBlockDataSet *InputBlocks = vtkMultiBlockDataSet::SafeDownCast(InputDataObject);
+        HERE
+        if(InputBlocks == NULL)
+        {
+            ERROR(<< "InputBlocks are NULL");
+        }
+
+        // std::cout << "Number of Blocks: " << InputBlocks->GetNumberOfBlocks() << std::endl;
+        HERE
+
+        ////////////
+
         this->UpdateInputFilter();
+        HERE
+
+
+
 
         // Integrate
         this->AdvectTracers(TracersData);
@@ -943,8 +1064,11 @@ int FlowMap::RequestData(
         this->ProgressUpdate(this->IntegrationTimeStepIndex,IntegrationTimeStepIndexMax);
     }
 
-    // Update output
-    output->SetOutputDataObject(TracersData);
+    // Reset progress
+    this->ProgressReset();
+
+    // Set Seed Grid to output
+    this->SetOutputDataObject(SeedGrid,TracersData);
 
     DEBUG(<< "Success");
     return 1;
@@ -1300,6 +1424,10 @@ void FlowMap::AdvectTracers(vtkPolyData *TracersData)
     // Declare Point and Velocity array for each point
     double Point[this->Dimension];
     double Velocity[this->Dimension];
+
+    // Set Progress
+    this->ProgressReset();
+    this->SetProgressMessage("Advect Tracers");
 
     // Iterate over points
     std::cout << "In flowmap::Advect" << std::endl;

@@ -40,7 +40,8 @@ class Visualization : public vtkUnstructuredGridAlgorithm, public BaseFilter
 		static Visualization * New();
 		vtkTypeRevisionMacro(Visualization,vtkUnstructuredGridAlgorithm);
 		virtual void PrintSelf(ostream &os,vtkIndent indent);
-		inline static const char * GetFilterName() { return "Visualization"; }
+		virtual inline const char * GetFilterName() { return this->GetStaticFilterName(); }
+		static inline const char * GetStaticFilterName() { return "Visualization"; }
 
         // Accessors, Mutators
 

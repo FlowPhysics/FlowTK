@@ -28,6 +28,15 @@
 #include <fstream>       // write log file
 #include <string>
 
+// ================
+// Global variables
+// ================
+
+// Output Stream Column Width
+const unsigned int OutputStreamSecondColumnWidth = 15;
+const unsigned int OutputStreamThirdColumnWidth  = 26;
+const unsigned int OutputStreamFourthColumnWidth = 28;
+
 // ======
 // Macros
 // ======
@@ -110,8 +119,8 @@
     if(this->DebugStatus) \
     { \
         OutputStream << "DEBUG:  "; \
-        OutputStream << std::setfill(' ') << std::setw(15) << std::left << this->GetClassName() << " "; \
-        OutputStream << std::setw(26) << std::left << __FUNCTION__ << " >  "; \
+        OutputStream << std::setfill(' ') << std::setw(OutputStreamSecondColumnWidth) << std::left << this->GetClassName() << " "; \
+        OutputStream << std::setw(OutputStreamThirdColumnWidth) << std::left << __FUNCTION__ << " >  "; \
         if(strstr(#__VA_ARGS__,"\"Success\"") != NULL) \
         { \
             OutputStream << FOREGROUND_GREEN; \
@@ -144,9 +153,9 @@
 #define PRINT(...) \
 { \
     OutputStream << FOREGROUND_BLUE << "PRINT:  "; \
-    OutputStream << std::setfill(' ') << std::setw(15) << std::left << ClassName << " "; \
-    OutputStream << std::setw(26) << std::left << FunctionName  << " >  "; \
-    OutputStream << std::setw(28) << std::left << VariableName << ": "; \
+    OutputStream << std::setfill(' ') << std::setw(OutputStreamSecondColumnWidth) << std::left << ClassName << " "; \
+    OutputStream << std::setw(OutputStreamThirdColumnWidth) << std::left << FunctionName  << " >  "; \
+    OutputStream << std::setw(OutputStreamFourthColumnWidth) << std::left << VariableName << ": "; \
     OutputStream __VA_ARGS__ << NONE; \
 } \
 
@@ -155,8 +164,8 @@
 #define ERROR(...) \
 { \
     OutputStream << FOREGROUND_LIGHT_RED << "ERROR:  "; \
-    OutputStream << std::setfill(' ') << std::setw(15) << std::left << this->GetClassName() << " "; \
-    OutputStream << std::setw(26) << std::left; \
+    OutputStream << std::setfill(' ') << std::setw(OutputStreamSecondColumnWidth) << std::left << this->GetClassName() << " "; \
+    OutputStream << std::setw(OutputStreamThirdColumnWidth) << std::left; \
     OutputStream << std::string(__FUNCTION__) + std::string(":") + std::to_string((static_cast<long long int>(__LINE__))); \
     OutputStream << " >  "; \
     OutputStream __VA_ARGS__; \
@@ -167,8 +176,8 @@
 #define WARNING(...) \
 { \
     OutputStream << FOREGROUND_LIGHT_YELLOW << "WARNI:  "; \
-    OutputStream << std::setfill(' ') << std::setw(15) << std::left << this->GetClassName() << " "; \
-    OutputStream << std::setw(26) << std::left; \
+    OutputStream << std::setfill(' ') << std::setw(OutputStreamSecondColumnWidth) << std::left << this->GetClassName() << " "; \
+    OutputStream << std::setw(OutputStreamThirdColumnWidth) << std::left; \
     OutputStream << std::string(__FUNCTION__) + std::string(":") + std::to_string((static_cast<long long int>(__LINE__))); \
     OutputStream << " >  "; \
     OutputStream __VA_ARGS__; \
@@ -179,11 +188,12 @@
 #define HERE \
 { \
     OutputStream << BACKGROUND_CYAN << "*HERE:  "; \
-    OutputStream << std::setfill(' ') << std::setw(15) << std::left << this->GetClassName() << " "; \
-    OutputStream << std::setw(26) << std::left << __FUNCTION__ << " >  "; \
+    OutputStream << std::setfill(' ') << std::setw(OutputStreamSecondColumnWidth) << std::left << this->GetClassName() << " "; \
+    OutputStream << std::setw(OutputStreamThirdColumnWidth) << std::left << __FUNCTION__ << " >  "; \
     OutputStream << "at line: " << __LINE__; \
     OutputStream << NONE << std::endl; \
 } \
+
 
 // ================
 // Class BaseFilter
@@ -193,7 +203,7 @@ class BaseFilter
 {
     public:
         static BaseFilter * New() { return new BaseFilter; }
-        inline static const char * GetFilterName() { return "BaseFilter"; }
+        virtual inline const char * GetFilterName() { return "BaseFilter"; }
 
         // Accessors, Mutators
         bool GetDebugStatus() const { return this->DebugStatus; }
@@ -208,9 +218,10 @@ class BaseFilter
 
         bool GetProgressStatus() const { return this->ProgressStatus; }
         void SetProgressStatus(bool Status) { this->ProgressStatus = Status; }
+        inline const char * GetProgressMessage() const;
+        inline void SetProgressMessage(const char *Message);
         void ProgressOn() { this->ProgressStatus = true; }
         void ProgressOff() { this->ProgressStatus = false; }
-
         unsigned int GetProgressSpeed() const { return this->ProgressSpeed; }
         void SetProgressSpeed(unsigned int Speed) { this->ProgressSpeed = Speed; }
 
@@ -271,11 +282,12 @@ class BaseFilter
         bool DisplayStatus;
         static bool LogStatus;
         bool ProgressStatus;
-        double ProgressValue; // Internal
+        double ProgressValue;                         // Internal
         unsigned int ProgressSpeed;
-        unsigned int ProgressInterval; // Internal
+        unsigned int ProgressInterval;                // Internal
+        char * ProgressMessage;
         static char *LogFileName;
-        static std::ofstream & LogFile; // Internal
+        static std::ofstream & LogFile;               // Internal
         static std::ostream * BaseFilterOutputStream; // Internal
 };
 

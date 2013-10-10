@@ -42,7 +42,8 @@ class Cache : public vtkMultiBlockDataSetAlgorithm, public BaseFilter
         // vtkTypeRevisionMacro(Cache,vtkMultiBlockDataSetAlgorithm);
         vtkTypeMacro(Cache,vtkMultiBlockDataSetAlgorithm);
         virtual void PrintSelf(ostream &os, vtkIndent indent);
-        inline static const char * GetFilterName() { return "Cache"; }
+        virtual inline const char * GetFilterName() { return this->GetStaticFilterName(); }
+        static inline const char * GetStaticFilterName() { return "Cache"; }
 
         // Accessors, Mutators
         vtkGetMacro(CacheSize,unsigned int);

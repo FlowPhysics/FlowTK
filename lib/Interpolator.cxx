@@ -620,6 +620,8 @@ int Interpolator::RequestData(
     vtkInformation *outputInfo = outputVector->GetInformationObject(0);
     vtkMultiBlockDataSet *output = vtkMultiBlockDataSet::SafeDownCast(outputInfo->Get(vtkDataObject::DATA_OBJECT()));
 
+    DISPLAY(output->GetNumberOfPoints());
+
     // Check output
     if(output == NULL)
     {
@@ -630,7 +632,7 @@ int Interpolator::RequestData(
     else if(output->GetNumberOfPoints() < 1)
     {
         // Test
-        HERE
+        WARNING(<< "Interpolator has no points.");
         vtkDataObject *OutputBlock = output->GetBlock(0);
         OutputBlock = NULL;
 

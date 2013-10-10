@@ -21,7 +21,13 @@
 // =======
 
 #include <BaseFilter.h>
-#include <string.h>    // for strcpy
+#include <cstring>    // for strcpy
+
+// ======
+// Macros
+// ======
+
+#define MAX_CHAR_LENGTH 512
 
 // ================
 // Static variables
@@ -49,6 +55,7 @@ BaseFilter::BaseFilter()
     this->LoggerOff();
     this->ProgressOff();
     this->SetProgressSpeed(1);
+    this->ProgressMessage = NULL;
 
     // Internal Member Data
     this->ProgressValue = 0;
@@ -67,6 +74,7 @@ BaseFilter::BaseFilter(const BaseFilter & rhs)
     this->LogStatus = rhs.GetLogStatus();
     this->ProgressStatus = rhs.GetProgressStatus();
     this->ProgressSpeed = rhs.GetProgressSpeed();
+    this->SetProgressMessage(rhs.GetProgressMessage());
 }
 
 // ==========
@@ -75,10 +83,18 @@ BaseFilter::BaseFilter(const BaseFilter & rhs)
 
 BaseFilter::~BaseFilter()
 {
+    // Log File
     LogFile.close();
     delete [] BaseFilter::LogFileName;
     BaseFilter::LogFileName = NULL;
     BaseFilter::BaseFilterOutputStream = NULL;
+
+    // Progress Message
+    if(this->ProgressMessage != NULL)
+    {
+        delete [] this->ProgressMessage;
+        this->ProgressMessage = NULL;
+    }
 }
 
 // ========
@@ -99,13 +115,48 @@ BaseFilter & BaseFilter::operator=(const BaseFilter & rhs)
     return *this;
 }
 
+// ====================
+// Get Progress Message
+// ====================
+
+inline const char * BaseFilter::GetProgressMessage() const
+{
+    if(this->ProgressMessage == NULL)
+    {
+        return "";
+    }
+    else
+    {
+        return this->ProgressMessage;
+    }
+}
+
+// ====================
+// Set Progress Message
+// ====================
+
+inline void BaseFilter::SetProgressMessage(const char *Message)
+{
+    // Delete previous message
+    if(this->ProgressMessage != NULL)
+    {
+        delete [] this->ProgressMessage;
+    }
+
+    // Allocate memory
+    this->ProgressMessage = new char[MAX_CHAR_LENGTH];
+
+    // Set Message
+    std::strcpy(this->ProgressMessage,Message);
+}
+
 // =================
 // Set Log File Name
 // =================
 
 void BaseFilter::SetLogFileName(const char * FileName)
 {
-    strcpy(BaseFilter::LogFileName,FileName);
+    std::strcpy(BaseFilter::LogFileName,FileName);
     LogFile.open(BaseFilter::LogFileName,std::ios_base::out);
     if(!LogFile.is_open())
     {
@@ -157,13 +208,14 @@ void BaseFilter::ProgressPrint()
     std::cout.setf(ios::fixed,ios::floatfield);
     std::cout.precision(2);
     std::cout << "\r" << FOREGROUND_YELLOW << "PROGR:  ";
-    std::cout << std::setfill(' ') << std::setw(15) << std::left << this->GetFilterName() << " ";
-    std::cout << "Progress: ";
+    std::cout << std::setfill(' ') << std::setw(OutputStreamSecondColumnWidth) << std::left << this->GetFilterName() << " ";
+    std::cout << std::setw(OutputStreamThirdColumnWidth) << std::left << this->GetProgressMessage();  
+    std::cout << " >  Progress: ";
     std::cout << std::setprecision(2) << std::right << std::setw(6) << this->ProgressValue << " %";
     std::cout << NONE;
     if(this->ProgressValue == 100)
     {
-        std::cout << FOREGROUND_YELLOW << "         >  Done!";
+        std::cout << FOREGROUND_YELLOW << "  >  Done!";
         std::cout << NONE << std::endl;
     }
 }
@@ -176,4 +228,11 @@ void BaseFilter::ProgressReset()
 {
     this->ProgressValue = 0;
     this->ProgressInterval = 0;
+    
+    // Progress Message
+    if(this->ProgressMessage != NULL)
+    {
+        delete [] this->ProgressMessage;
+        this->ProgressMessage = NULL;
+    }
 }

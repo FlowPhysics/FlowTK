@@ -74,7 +74,7 @@ vtkInformationDoubleVectorKey * FilterInformation::TIME_STEPS()
 {
     // Key Settings
     const char * TimeStepsKeyName = "TIME_STEPS";
-    const char * TimeStepsKeyLocation = FilterInformation::GetFilterName();
+    const char * TimeStepsKeyLocation = FilterInformation::GetStaticFilterName();
     int TimeStepsKeyLength = -1;
 
     // Create Key
@@ -94,7 +94,7 @@ vtkInformationDoubleVectorKey * FilterInformation::TIME_RANGE()
 {
     // Key Settings
     const char * TimeRangeKeyName = "TIME_RANGE";
-    const char * TimeRangeKeyLocation = FilterInformation::GetFilterName();
+    const char * TimeRangeKeyLocation = FilterInformation::GetStaticFilterName();
     int TimeRangeKeyLength = -1;
 
     // Create Key
@@ -114,7 +114,7 @@ vtkInformationDoubleVectorKey * FilterInformation::UPDATE_TIME_STEPS()
 {
     // Key Settings
     const char * UpdateTimeStepsKeyName = "UPDATE_TIME_STEPS";
-    const char * UpdateTimeStepsKeyLocation = FilterInformation::GetFilterName();
+    const char * UpdateTimeStepsKeyLocation = FilterInformation::GetStaticFilterName();
     int UpdateTimeStepsKeyLength = -1;
 
     // Create Key

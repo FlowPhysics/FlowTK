@@ -40,7 +40,8 @@ class LCS : public vtkDataSetAlgorithm, public BaseFilter
         static LCS * New();
         vtkTypeRevisionMacro(LCS,vtkDataSetAlgorithm);
         virtual void PrintSelf(ostream &os, vtkIndent indent);
-        inline static const char * GetFilterName() { return "LCS"; }
+        virtual inline const char * GetFilterName() { return this->GetStaticFilterName(); }
+        static inline const char * GetStaticFilterName() { return "LCS"; }
 
         // Accessors, Mutators
 

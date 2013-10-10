@@ -55,7 +55,8 @@ class FlowMap : public vtkPolyDataAlgorithm, public BaseFilter
         static FlowMap * New();
         vtkTypeRevisionMacro(FlowMap,vtkPolyDataAlgorithm);
         virtual void PrintSelf(ostream &os, vtkIndent indent);
-        inline static const char * GetFilterName() { return "FlowMap"; }
+        virtual inline const char * GetFilterName() { return this->GetStaticFilterName(); }
+        static inline const char * GetStaticFilterName() { return "FlowMap"; }
 
         // Accessors, Mutators
         vtkGetMacro(Dimension,unsigned int);

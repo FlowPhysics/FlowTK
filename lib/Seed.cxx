@@ -879,6 +879,10 @@ int Seed::FindIntersectionOfGrids(
     double SeedPoint[this->Dimension];
     unsigned long int NumberOfSeedPointsInsideDataGrid = 0;
 
+    // Set Progress
+    this->ProgressReset();
+    this->SetProgressMessage("Locate seeds");
+
     // Search Modes
     switch (this->SearchMode)
     {
@@ -1021,6 +1025,10 @@ void Seed::InitializeTracers(
     // int *pTracerIds = TracerIds->GetPointer(0);
     int *pTracerIds = TracerIds->WritePointer(0,NumberOfTracers);
 
+    // Set Progress
+    this->ProgressReset();
+    this->SetProgressMessage("Initialize tracers");
+
     // Get Tracer Points
     unsigned long int TracerCounter = 0;
     for(unsigned long int i=0; i<NumberOfSeedGridPoints; i++)
@@ -1033,6 +1041,8 @@ void Seed::InitializeTracers(
             }
             pTracerIds[TracerCounter] = pSeedCellIds[i];
             TracerCounter++;
+
+            // Update Progress
             this->ProgressUpdate(TracerCounter,NumberOfTracers);
         }
     }
@@ -1051,7 +1061,9 @@ void Seed::InitializeTracers(
     // Add TracersId to Seed Grid
     SeedGrid->GetFieldData()->AddArray(TracerIds);
 
+    // Reset progress
     this->ProgressReset();
+
     DEBUG(<< "Success");
 }
 

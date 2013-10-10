@@ -31,9 +31,9 @@
 class vtkInformationKey;
 class vtkInformationDoubleVectorKey;
 
-// ===================
+// =================
 // FilterInformation
-// ===================
+// =================
 
 class FilterInformation : public vtkInformation, public BaseFilter
 {
@@ -41,7 +41,8 @@ class FilterInformation : public vtkInformation, public BaseFilter
         static FilterInformation * New();
         vtkTypeRevisionMacro(FilterInformation,vtkInformation);
         virtual void PrintSelf(ostream &os, vtkIndent Indent);
-        static const char * GetFilterName() { return "FilterInformation"; }
+        virtual inline const char * GetFilterName() { return this->GetStaticFilterName(); }
+        static const char * GetStaticFilterName() { return "FilterInformation"; }
 
         // Member Methods
         vtkInformationKey * GetKey(

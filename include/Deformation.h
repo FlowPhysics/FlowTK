@@ -41,7 +41,8 @@ class Deformation : public vtkDataSetAlgorithm, public BaseFilter
         // vtkTypeRevisionMacro(Deformation,vtkDataSetAlgorithm);
         vtkTypeMacro(Deformation,vtkDataSetAlgorithm);
         virtual void PrintSelf(ostream &os, vtkIndent indent);
-        inline static const char * GetFilterName() { return "Deformation"; }
+        virtual inline const char * GetFilterName() { return this->GetStaticFilterName(); }
+        static inline const char * GetStaticFilterName() { return "Deformation"; }
 
         // Accessors, Mutators
 
