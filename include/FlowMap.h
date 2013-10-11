@@ -140,6 +140,8 @@ class FlowMap : public vtkPolyDataAlgorithm, public BaseFilter
                 vtkPolyData *PolyData,
                 vtkDataArray *DataArray);
 
+        void InformationTest(vtkInformationVector **inputVector);
+
         // Member Methods
         const char * IntegratorModeString(IntegratorModeType IntegratorMode);
         unsigned int RequiredTimeFrames(IntegratorModeType IntegratorMode);

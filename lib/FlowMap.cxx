@@ -652,7 +652,7 @@ void FlowMap::UpdateInputDataObject(vtkDataObject *UpdateDataObject)
     // Get Input data object
     int Port = 0;
     int Connection = 0;
-    vtkDataObject *InputDataObject = this->GetInputDataObject(Port,Connection);
+    vtkDataObject *InputDataObject = this->GetInputDataObject(Port,Connection);      ////////
 
     // Check input data object
     if(InputDataObject == NULL)
@@ -692,25 +692,54 @@ void FlowMap::UpdateInputDataObject(vtkDataObject *UpdateDataObject)
         ERROR(<< "InputInformation2 is NULL");
     }
     vtkDataObject *InputDataObject2 = InputInformation2->Get(vtkDataObject::DATA_OBJECT());
+    // vtkDataObject *InputDataObject2 = this->GetInputDataObject(Port,Connection);
     if(InputDataObject2 == NULL)
     {
         ERROR(<< "InputDataObject2 is NULL");
+    }
+
+    if(InputDataObject == InputDataObject2)
+    {
+        std::cout << "TWO INPUTS ARE THE SAME." << std::endl;
+    }
+    else
+    {
+        std::cout << "TWO INPUTS ARE not THE SAME." << std::endl;
     }
     vtkMultiBlockDataSet *InputMultiBlockData2 = vtkMultiBlockDataSet::SafeDownCast(InputDataObject2);
     if(InputMultiBlockData2 == NULL)
     {
         ERROR(<< "InputMultiBlockData2 is NULL.");
     }
-    std::cout << "NEW: Number of Blocks2: " << InputMultiBlockData2->GetNumberOfBlocks() << std::endl;
-    vtkPolyData *InputPolyData2 = vtkPolyData::SafeDownCast(InputMultiBlockData2->GetBlock(0));
-    if(InputPolyData2 == NULL)
-    {
-        ERROR(<< "InputPolyData2 is NULL");
-    }
-    std::cout << "New: Number of Points: " << InputPolyData2->GetNumberOfPoints() << std::endl;
+    std::cout << "InputDataObject2: " << InputDataObject2 << std::endl;
+    // InputDataObject2->Print(std::cout);
+    // std::cout << "NEW: Number of Blocks2: " << InputMultiBlockData2->GetNumberOfBlocks() << std::endl;
+    // vtkPolyData *InputPolyData2 = vtkPolyData::SafeDownCast(InputMultiBlockData2->GetBlock(0));
+    // if(InputPolyData2 == NULL)
+    // {
+    //     ERROR(<< "InputPolyData2 is NULL");
+    // }
+    // std::cout << "New: Number of Points: " << InputPolyData2->GetNumberOfPoints() << std::endl;
 
 
     ////////////
+    
+
+    /// Test 3 ///
+
+    vtkExecutive *Executive = this->GetExecutive();
+    vtkInformationVector *InputInformationVector3 = Executive->GetInputInformation(0);
+    vtkInformation *InputInformation3 = InputInformationVector3->GetInformationObject(0);
+    vtkDataObject *InputDataObject3 = InputInformation3->Get(vtkDataObject::DATA_OBJECT());
+    if(InputDataObject3 == InputDataObject)
+    {
+        std::cout << "3 and 1 are the same." << std::endl;
+    }
+    else
+    {
+        std::cout << "3 and 1 are not the same." << std::endl;
+    }
+
 }
 
 // ===================
@@ -861,6 +890,60 @@ void FlowMap::ConvertPolyDataToDataArray(
     this->ProgressReset();
 }
 
+// ================
+// Information Test
+// ================
+
+void FlowMap::InformationTest(vtkInformationVector **inputVector)
+{
+    // Form inputVector
+    vtkInformation *InputInformation1 = inputVector[0]->GetInformationObject(0);
+    vtkDataObject *InputDataObject1 = InputInformation1->Get(vtkDataObject::DATA_OBJECT());
+    vtkMultiBlockDataSet *InputMultiBlock1 = vtkMultiBlockDataSet::SafeDownCast(InputDataObject1);
+
+    if(!InputDataObject1)
+    {
+        ERROR(<< "InputDataObject1 is null.");
+    }
+    if(!InputMultiBlock1)
+    {
+        ERROR(<< "InputMultiBlock1 is NULL.");
+    }
+
+    // From Executive
+    vtkExecutive *Executive = this->GetExecutive();
+    vtkInformationVector *InputVector2 = Executive->GetInputInformation(0);
+    vtkInformation *InputInformation2 = InputVector2->GetInformationObject(0);
+    vtkDataObject *InputDataObject2 = InputInformation2->Get(vtkDataObject::DATA_OBJECT());
+    vtkMultiBlockDataSet *InputMultiBlock2 = vtkMultiBlockDataSet::SafeDownCast(InputDataObject2);
+
+    if(!InputDataObject2)
+    {
+        ERROR(<< "InputDataObject2 is NULL.")
+    }
+    if(!InputMultiBlock2)
+    {
+        ERROR(<< "InputMultiBlock2 is NULL.")
+    }
+
+    // From Get Input Data
+    vtkDataObject *InputDataObject3 = this->GetInputDataObject(0,0);
+    vtkMultiBlockDataSet *InputMultiBlock3 = vtkMultiBlockDataSet::SafeDownCast(InputDataObject3);
+
+    if(!InputDataObject3)
+    {
+        ERROR(<< "InputDataObject3 is NULL.");
+    }
+    if(!InputMultiBlock3)
+    {
+        ERROR(<< "InputMultiBlock3 is NULL.");
+    }
+
+    // Comparision
+    std::cout << "DO1: " << InputDataObject1 << ", DO2: " << InputDataObject2 << ", DO3: " << InputDataObject3 << std::endl;
+    std::cout << "MB1: " << InputMultiBlock1 << ", MB2: " << InputMultiBlock2 << ", MB3: " << InputMultiBlock3 << std::endl;
+}
+
 // ============
 // Request Data
 // ============
@@ -1008,6 +1091,9 @@ int FlowMap::RequestData(
     }
     */
 
+    this->InformationTest(inputVector);
+
+    /*
     // Initialization //
 
     // Initialize time indices
@@ -1069,6 +1155,7 @@ int FlowMap::RequestData(
 
     // Set Seed Grid to output
     this->SetOutputDataObject(SeedGrid,TracersData);
+    */
 
     DEBUG(<< "Success");
     return 1;
