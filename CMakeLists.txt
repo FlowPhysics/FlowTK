@@ -41,8 +41,8 @@ project(flowVP CXX)
 # ======================
 
 # ParaView plugin option
-set(BUILD_PARAVIEW_PLUGIN ON CACHE BOOL "Build ParaView plugin?")
-# set(BUILD_PARAVIEW_PLUGIN OFF CACHE BOOL "Build ParaView plugin?")
+# set(BUILD_PARAVIEW_PLUGIN ON CACHE BOOL "Build ParaView plugin?")
+set(BUILD_PARAVIEW_PLUGIN OFF CACHE BOOL "Build ParaView plugin?")
 
 # Avoid confliction of Paraview and VTK inclusion
 if(BUILD_PARAVIEW_PLUGIN)

@@ -939,9 +939,25 @@ void FlowMap::InformationTest(vtkInformationVector **inputVector)
         ERROR(<< "InputMultiBlock3 is NULL.");
     }
 
+    // From InputPortInformation
+    vtkInformation *InputInformation4 = this->GetInputPortInformation(0);
+    vtkDataObject *InputDataObject4 = InputInformation4->Get(vtkDataObject::DATA_OBJECT());
+    vtkMultiBlockDataSet *InputMultiBlock4 = vtkMultiBlockDataSet::SafeDownCast(InputDataObject4);
+
+    if(!InputDataObject4)
+    {
+        ERROR(<< "InputDataObject4 is NULL.")
+    }
+    if(!InputMultiBlock4)
+    {
+        ERROR(<< "InputMultiBlock4 is NULL.");
+    }
+
     // Comparision
-    std::cout << "DO1: " << InputDataObject1 << ", DO2: " << InputDataObject2 << ", DO3: " << InputDataObject3 << std::endl;
-    std::cout << "MB1: " << InputMultiBlock1 << ", MB2: " << InputMultiBlock2 << ", MB3: " << InputMultiBlock3 << std::endl;
+    std::cout << "DO1: " << InputDataObject1 << ", DO2: " << InputDataObject2 << ", DO3: " << InputDataObject3 << ", DO4: " << InputDataObject4 << std::endl;
+    std::cout << "MB1: " << InputMultiBlock1 << ", MB2: " << InputMultiBlock2 << ", MB3: " << InputMultiBlock3 << ", MB4: " << InputMultiBlock4 << std::endl;
+    std::cout << InputMultiBlock1->GetNumberOfBlocks() << std::endl;
+    std::cout << InputMultiBlock1->GetNumberOfPoints() << std::endl;
 }
 
 // ============
@@ -1093,14 +1109,11 @@ int FlowMap::RequestData(
 
     this->InformationTest(inputVector);
 
-    /*
+    // /*
     // Initialization //
 
     // Initialize time indices
     this->InitializeTimeIndices(inputInfo0);
-
-    // Initialize Integrator Coefficients
-    this->InitializeIntegratorCoefficients();
 
     // Initialize Integrator Coefficients
     this->InitializeIntegratorCoefficients();
@@ -1155,7 +1168,7 @@ int FlowMap::RequestData(
 
     // Set Seed Grid to output
     this->SetOutputDataObject(SeedGrid,TracersData);
-    */
+    // */
 
     DEBUG(<< "Success");
     return 1;
