@@ -622,6 +622,31 @@ int Interpolator::RequestData(
 
     DISPLAY(output->GetNumberOfPoints());
 
+    /// Test ///
+    vtkDataObject *OutputDataObject = this->GetOutputDataObject(0);
+    vtkMultiBlockDataSet *OutputMultiBlock = vtkMultiBlockDataSet::SafeDownCast(OutputDataObject);
+    if(!OutputDataObject)
+    {
+        ERROR(<< "OutputDataObject is NULL");
+    }
+    if(!OutputMultiBlock)
+    {
+        ERROR(<< "OutpuMultiBlock is NULL");
+    }
+    else
+    {
+        std::cout << "Number of Blocks: " << OutputMultiBlock->GetNumberOfBlocks() << std::endl;
+    }
+    vtkPolyData *OutputPolyData = vtkPolyData::SafeDownCast(OutputMultiBlock->GetBlock(0));
+    if(!OutputPolyData)
+    {
+        ERROR(<< "OutputPolyData is NULL.")
+    }
+    else
+    {
+        std::cout << "Number of points: " << OutputPolyData->GetNumberOfPoints() << std::endl;
+    }
+
     // Check output
     if(output == NULL)
     {
