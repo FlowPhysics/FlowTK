@@ -622,12 +622,16 @@ int Interpolator::RequestData(
 
     DISPLAY(output->GetNumberOfPoints());
 
-    /// Test ///
+    /// Test 1 ///
     vtkDataObject *OutputDataObject = this->GetOutputDataObject(0);
     vtkMultiBlockDataSet *OutputMultiBlock = vtkMultiBlockDataSet::SafeDownCast(OutputDataObject);
     if(!OutputDataObject)
     {
         ERROR(<< "OutputDataObject is NULL");
+    }
+    else
+    {
+        std::cout << "Interpoltor, OutputDataObject: " << OutputDataObject << std::endl;
     }
     if(!OutputMultiBlock)
     {
@@ -646,6 +650,9 @@ int Interpolator::RequestData(
     {
         std::cout << "Number of points: " << OutputPolyData->GetNumberOfPoints() << std::endl;
     }
+
+    /// Test 2 ///
+    // vtkAlgorithm *FlowMap = this->Get
 
     // Check output
     if(output == NULL)
