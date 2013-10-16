@@ -649,6 +649,7 @@ void FlowMap::UpdateInputDataObject(vtkDataObject *UpdateDataObject)
     // Cast DataObject to PolyData
     vtkPolyData *UpdatePolyData = vtkPolyData::SafeDownCast(UpdateDataObject);
 
+    // /*
     // Get Input data object
     int Port = 0;
     int Connection = 0;
@@ -664,9 +665,22 @@ void FlowMap::UpdateInputDataObject(vtkDataObject *UpdateDataObject)
 
     // Cast Input DataObject to MultiBlock data
     vtkMultiBlockDataSet *InputMultiBlockData = vtkMultiBlockDataSet::SafeDownCast(InputDataObject);
+    
+    // Check availability of MultiBlock
+    if(InputMultiBlockData == NULL)
+    {
+        ERROR(<< "InputMultiBlockData is NULL");
+        vtkErrorMacro("InputMultiBlockData is NULL.");
+    }
 
     // Set Updated DataObject to input block DataSet
     InputMultiBlockData->SetBlock(0,UpdatePolyData);
+    // */
+
+    // Second Try
+    // vtkMultiBlockDataSet
+
+    
 }
 
 // ===================
@@ -677,11 +691,42 @@ void FlowMap::UpdateInputFilter()
 {
     // Update FlowMap's Input Data Object
     HERE
+    this->Test();
     this->UpdateInputDataObject();
     HERE
+    this->Test();
 
-    /// TEST ///
 
+    ////////////
+
+    // Update FlowMap's Input Information
+    // this->UpdateInputInformation();
+
+    // Get Interpolator
+    int InterpolatorPort = 0;
+    int InterpolatorConnection = 0;
+    vtkAlgorithm *InterpolatorAlgorithm = this->GetInputAlgorithm(InterpolatorPort,InterpolatorConnection);
+    vtkDataSetAlgorithm *Interpolator = vtkDataSetAlgorithm::SafeDownCast(InterpolatorAlgorithm);
+
+    // Modify MTime
+    Interpolator->Modified();
+
+    HERE
+    this->Test();
+
+    // Update Interpolator
+    Interpolator->Update();
+
+    HERE
+    this->Test();
+}
+
+// ====
+// Test
+// ====
+
+void FlowMap::Test()
+{
     vtkDataObject *InputDataObject = this->GetInputDataObject(0,0);
     std::cout << "FlowMap: InputDataObject: " << InputDataObject << std::endl;
     if(InputDataObject == NULL)
@@ -707,24 +752,6 @@ void FlowMap::UpdateInputFilter()
     {
         std::cout << "New: Number of Points: " << InputPolyData->GetNumberOfPoints() << std::endl;
     }
-
-
-    ////////////
-
-    // Update FlowMap's Input Information
-    this->UpdateInputInformation();
-
-    // Get Interpolator
-    int InterpolatorPort = 0;
-    int InterpolatorConnection = 0;
-    vtkAlgorithm *InterpolatorAlgorithm = this->GetInputAlgorithm(InterpolatorPort,InterpolatorConnection);
-    vtkDataSetAlgorithm *Interpolator = vtkDataSetAlgorithm::SafeDownCast(InterpolatorAlgorithm);
-
-    // Modify MTime
-    Interpolator->Modified();
-
-    // Update Interpolator
-    Interpolator->Update();
 }
 
 // ======================

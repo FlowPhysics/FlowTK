@@ -96,6 +96,9 @@ class FlowMap : public vtkPolyDataAlgorithm, public BaseFilter
         virtual void AddInput(vtkDataObject *InputDataObject);
         virtual void AddInput(int port, vtkDataObject *InputDataObject);
 
+        // Test
+        void Test();
+
     protected:
         FlowMap();
         virtual ~FlowMap();
