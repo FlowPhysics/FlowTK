@@ -83,6 +83,9 @@ class Interpolator : public vtkDataSetAlgorithm, public BaseFilter
         virtual void AddInput(vtkDataObject *InputDataObject);
         virtual void AddInput(int port, vtkDataObject *InputDataObject);
 
+        // Test
+        void Test();
+
     protected:
         Interpolator();
         virtual ~Interpolator();

@@ -733,24 +733,27 @@ void FlowMap::Test()
     {
         ERROR(<< "InputDataObject is NULL");
     }
-    vtkMultiBlockDataSet *InputMultiBlockData = vtkMultiBlockDataSet::SafeDownCast(InputDataObject);
-    std::cout << "FLowMap: InputMultiBlockData: " << InputMultiBlockData << std::endl;
-    if(InputMultiBlockData == NULL)
-    {
-        ERROR(<< "InputMultiBlockData is NULL.");
-    }
     else
     {
-        std::cout << "NEW: Number of Blocks: " << InputMultiBlockData->GetNumberOfBlocks() << std::endl;
-    }
-    vtkPolyData *InputPolyData = vtkPolyData::SafeDownCast(InputMultiBlockData->GetBlock(0));
-    if(InputPolyData == NULL)
-    {
-        ERROR(<< "InputPolyData is NULL");
-    }
-    else
-    {
-        std::cout << "New: Number of Points: " << InputPolyData->GetNumberOfPoints() << std::endl;
+        vtkMultiBlockDataSet *InputMultiBlockData = vtkMultiBlockDataSet::SafeDownCast(InputDataObject);
+        std::cout << "FLowMap: InputMultiBlockData: " << InputMultiBlockData << std::endl;
+        if(InputMultiBlockData == NULL)
+        {
+            ERROR(<< "InputMultiBlockData is NULL.");
+        }
+        else
+        {
+            std::cout << "NEW: Number of Blocks: " << InputMultiBlockData->GetNumberOfBlocks() << std::endl;
+            vtkPolyData *InputPolyData = vtkPolyData::SafeDownCast(InputMultiBlockData->GetBlock(0));
+            if(InputPolyData == NULL)
+            {
+                ERROR(<< "InputPolyData is NULL");
+            }
+            else
+            {
+                std::cout << "New: Number of Points: " << InputPolyData->GetNumberOfPoints() << std::endl;
+            }
+        }
     }
 }
 

@@ -280,6 +280,9 @@ int Interpolator::RequestDataObject(
     // Prots
     for(unsigned int i=0; i<static_cast<unsigned int>(this->GetNumberOfOutputPorts()); i++)
     {
+        HERE
+        this->Test();
+
         // Output
         vtkInformation *outputInfo = outputVector->GetInformationObject(i);
         vtkMultiBlockDataSet *output = vtkMultiBlockDataSet::SafeDownCast(outputInfo->Get(vtkDataObject::DATA_OBJECT()));
@@ -292,6 +295,9 @@ int Interpolator::RequestDataObject(
             output->FastDelete();
             this->GetOutputPortInformation(i)->Set(vtkDataObject::DATA_EXTENT_TYPE(),output->GetExtentType());
         }
+
+        HERE
+        this->Test();
     }
 
     DEBUG(<< "Success");
@@ -307,6 +313,9 @@ int Interpolator::RequestInformation(
         vtkInformationVector **inputVector,
         vtkInformationVector *outputVector)
 {
+    HERE
+    this->Test();
+
     // Input 
     vtkInformation *inputInfo = inputVector[0]->GetInformationObject(0);
 
@@ -369,6 +378,9 @@ int Interpolator::RequestInformation(
     // Set Time Range to Output
     outputInfo->Set(FilterInformation::TIME_RANGE(),TimeRange,2);
 
+    HERE
+    this->Test();
+
     DEBUG(<< "Success");
     return 1;
 }
@@ -382,6 +394,9 @@ int Interpolator::RequestUpdateExtent(
         vtkInformationVector **inputVector,
         vtkInformationVector *outputVector)
 {
+    HERE
+    this->Test();
+
     // Input
     vtkInformation *inputInfo = inputVector[0]->GetInformationObject(0);
 
@@ -580,7 +595,48 @@ int Interpolator::RequestUpdateExtent(
     // Set Input Update Time Steps to Input
     inputInfo->Set(FilterInformation::UPDATE_TIME_STEPS(),InputUpdateTimeSteps,NumberOfSqueezedIndices);
 
+    HERE
+    this->Test();
+
     return 1;
+}
+
+// ====
+// Test
+// ====
+
+void Interpolator::Test()
+{
+    vtkExecutive *Executive = this->GetExecutive();
+    vtkInformation *OutputInformation = Executive->GetOutputInformation(0);
+    vtkDataObject *OutputDataObject = OutputInformation->Get(vtkDataObject::DATA_OBJECT());
+    std::cout << "Interpolator: OutputDataObject: " << OutputDataObject << std::endl;
+    if(OutputDataObject == NULL)
+    {
+        ERROR(<< "OutputDataObject is NULL");
+    }
+    else
+    {
+        vtkMultiBlockDataSet *OutputMultiBlockData = vtkMultiBlockDataSet::SafeDownCast(OutputDataObject);
+        std::cout << "Interpolator: OutputMultiBlockData: " << OutputMultiBlockData << std::endl;
+        if(OutputMultiBlockData == NULL)
+        {
+            ERROR(<< "OutputMultiBlockData is NULL.");
+        }
+        else
+        {
+            std::cout << "NEW: Number of Blocks: " << OutputMultiBlockData->GetNumberOfBlocks() << std::endl;
+            vtkPolyData *OutputPolyData = vtkPolyData::SafeDownCast(OutputMultiBlockData->GetBlock(0));
+            if(OutputPolyData == NULL)
+            {
+                ERROR(<< "OutputPolyData is NULL");
+            }
+            else
+            {
+                std::cout << "New: Number of Points: " << OutputPolyData->GetNumberOfPoints() << std::endl;
+            }
+        }
+    }
 }
 
 // ============
@@ -592,6 +648,9 @@ int Interpolator::RequestData(
         vtkInformationVector **inputVector,
         vtkInformationVector *outputVector)
 {
+    HERE
+    this->Test();
+
     // Input
     vtkInformation *inputInfo = inputVector[0]->GetInformationObject(0);
     vtkMultiBlockDataSet *input = vtkMultiBlockDataSet::SafeDownCast(inputInfo->Get(vtkDataObject::DATA_OBJECT()));
@@ -687,6 +746,9 @@ int Interpolator::RequestData(
             UpdateTimeSteps,UpdateTimeStepsLength);
 
     output->ShallowCopy(vtkDataSet::SafeDownCast(input->GetBlock(0)));
+
+    HERE
+    this->Test();
 
     return 1;
 }
