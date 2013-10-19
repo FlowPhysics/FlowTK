@@ -205,6 +205,7 @@ int Interpolator::ProcessRequest(
         vtkInformationVector *outputVector)
 {
     DEBUG(<< request->GetRequest()->GetName());
+    // request->Print(std::cout);
 
     // Request Data Object
     if(request->Has(vtkDemandDrivenPipeline::REQUEST_DATA_OBJECT()))
@@ -228,6 +229,14 @@ int Interpolator::ProcessRequest(
     if(request->Has(vtkDemandDrivenPipeline::REQUEST_DATA()))
     {
         return this->RequestData(request,inputVector,outputVector);
+    }
+
+    // Request Data Not Generated
+    if(request->Has(vtkDemandDrivenPipeline::REQUEST_DATA_NOT_GENERATED()))
+    {
+        unsigned int OutputPort = request->Get(vtkDemandDrivenPipeline::FROM_OUTPUT_PORT());
+        vtkInformation *OutputInfo = outputVector->GetInformationObject(OutputPort);
+        OutputInfo->Set(vtkDemandDrivenPipeline::DATA_NOT_GENERATED(),1);
     }
 
     // Otherwise use supperclass
