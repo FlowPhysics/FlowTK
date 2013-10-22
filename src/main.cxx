@@ -69,7 +69,8 @@ int main(int argc,char *argv[])
     vtkSmartPointer<Seed> seed = vtkSmartPointer<Seed>::New();
     seed->SetInputConnection(0,reader->GetOutputPort(0));
     seed->SetDimension(3);
-    seed->SetResolution(40,40,40);
+    // seed->SetResolution(40,40,40);
+    seed->SetResolution(4,4,4);
     // seed->SetBounds(15,65,105,155,175,225);
     seed->SetBounds(-4,2,4,6,-1,1);
     seed->SetSearchModeToPointSet();
