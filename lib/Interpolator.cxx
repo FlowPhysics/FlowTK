@@ -776,29 +776,26 @@ bool Interpolator::Interpolate(
 {
     // 1- Inputs //
 
-    // Using DataObject Array instead of MultiBlock Data
-    vtkDataObject **InputDataObjectsArray;
-
-    // Convert MultiBlock Data to DataObject Array
-    HERE
-    this->MultiBlockDataSetToDataObjectArray(InputMultiBlockData,InputDataObjectsArray);
-    HERE
-
     // Number of Input Blocks or DataObjects
     unsigned int NumberOfInputDataObjects = InputMultiBlockData->GetNumberOfBlocks();
 
-    // 2- Outputs //
-   
-    // Using DataObject Array instead of MultoBlock Data
-    vtkDataObject **OutputDataObjectsArray;
+
+    // Using DataObject Array instead of MultiBlock Data
+    vtkDataObject *InputDataObjectsArray[NumberOfInputDataObjects];
 
     // Convert MultiBlock Data to DataObject Array
-    HERE
-    this->MultiBlockDataSetToDataObjectArray(OutputMultiBlockData,OutputDataObjectsArray);
-    HERE
+    this->MultiBlockDataSetToDataObjectArray(InputMultiBlockData,InputDataObjectsArray);
 
+    // 2- Outputs //
+   
     // Number of Output Blocks or DataObjects
     unsigned int NumberOfOutputDataObjects = OutputMultiBlockData->GetNumberOfBlocks();
+
+    // Using DataObject Array instead of MultoBlock Data
+    vtkDataObject *OutputDataObjectsArray[NumberOfOutputDataObjects];
+
+    // Convert MultiBlock Data to DataObject Array
+    this->MultiBlockDataSetToDataObjectArray(OutputMultiBlockData,OutputDataObjectsArray);
 
     // Declare arrays needed for interpolation //
 
@@ -812,7 +809,6 @@ bool Interpolator::Interpolate(
     vtkDoubleArray *TracerWeightsInCellArray[NumberOfOutputDataObjects];
 
     // Define arrays needed for intrpolation //
-    HERE
 
     // Loop over output blocks
     for(unsigned int OutputDataObjectsIterator = 0;
@@ -831,9 +827,8 @@ bool Interpolator::Interpolate(
 
     // Get the first of DataObject for points for geometry
     vtkDataObject *FirstInputDataObject = InputDataObjectsArray[0];
-    std::cout << "FirstInputDataObject: " << FirstInputDataObject << std::endl;
 
-    /// TEST ///
+    // Check First Input DataObject
     if(FirstInputDataObject == NULL)
     {
         ERROR(<< "FirstInputDataObject is NULL.");
@@ -847,7 +842,6 @@ bool Interpolator::Interpolate(
     }
 
     // Locate tracer points inside data grid
-    std::cout << "BBBBBBBBBBB" << std::endl;
     this->LocateTracersInDataGrid(
             FirstInputDataObject,
             OutputDataObjectsArray,
@@ -945,40 +939,12 @@ void Interpolator::MultiBlockDataSetToDataObjectArray(
         ERROR(<< "MultiBlock has no leaf.");
         vtkErrorMacro("MultiBlock has no leaf.");
     }
-    HERE
-    // MultiBlockData->Print(std::cout);
 
     // Iterate over blocks
     for(unsigned int DataObjectIterator = 0; DataObjectIterator < NumberOfBlocks; DataObjectIterator++)
     {
         // Get DataObject block
-        HERE
-        vtkDataObject *ME = MultiBlockData->GetBlock(DataObjectIterator);
-        HERE
-        // DataObjectArray[DataObjectIterator] = MultiBlockData->GetBlock(DataObjectIterator);
-        vtkDataObject *TEST = MultiBlockData->GetBlock(DataObjectIterator);
-        HERE
-        if(TEST == NULL)
-        {
-            std::cout << "TEST is null." << std::endl;
-        }
-        else
-        {
-            vtkDataSet *TESTDS = vtkDataSet::SafeDownCast(TEST);
-            int n = TESTDS->GetNumberOfPoints();
-            std::cout << "n: " << n << std::endl;
-        }
-        std::cout << "DataObjectIterator: " << DataObjectIterator << std::endl;
-        if(DataObjectArray == NULL)
-        {
-            std::cout << "DataObjectArrays is NULL." << std::endl;
-        }
-        HERE
-        vtkDataObject **Array;
-        Array[DataObjectIterator] = TEST;
-        HERE
-        DataObjectArray[DataObjectIterator] = TEST;
-        HERE
+        DataObjectArray[DataObjectIterator] = MultiBlockData->GetBlock(DataObjectIterator);
 
         // Check Data is valid
         if(DataObjectArray[DataObjectIterator] == NULL)
@@ -999,7 +965,6 @@ void Interpolator::MultiBlockDataSetToDataObjectArray(
             }
         }
     }
-    HERE
 }
 
 // ============================
@@ -1097,14 +1062,38 @@ void Interpolator::LocateTracersInDataGrid(
         vtkDataSet *OutputDataSet = vtkDataSet::SafeDownCast(OutputDataObjectsArray[OutputDataObjectsIterator]);
 
         // Number of Tracers
-        HERE
         unsigned int NumberOfTracers = OutputDataSet->GetNumberOfPoints();
         HERE
+
+        /// TEST ///
+        if(TracersCellIdsArray == NULL)
+        {
+            std::cout << "TracersCellIdsArray is NULL." << std::endl;
+        }
+        if(TracersCellIdsArray[OutputDataObjectsIterator] == NULL)
+        {
+            std::cout << "TracersCellIdsArray[OutputDataObject] is NULL." << std::endl;
+        }
+        else
+        {
+            std::cout << TracersCellIdsArray << std::endl;
+            std::cout << OutputDataObjectsIterator << std::endl;
+            HERE
+            std::cout << TracersCellIdsArray[0] << std::endl;
+            vtkIdTypeArray *IdTypeArray = TracersCellIdsArray[0];
+            // IdTypeArray->Print(std::cout);
+            IdTypeArray->SetNumberOfTuples(10);
+            HERE
+            // TracersCellIdsArray[OutputDataObjectsIterator]->Print(std::cout);
+            TracersCellIdsArray[0]->Print(std::cout);
+            HERE
+        }
 
         // Set Tracer CellIds
         TracersCellIdsArray[OutputDataObjectsIterator]->SetNumberOfComponents(1);
         TracersCellIdsArray[OutputDataObjectsIterator]->SetNumberOfTuples(NumberOfTracers);
         TracersCellIdsArray[OutputDataObjectsIterator]->SetName("CellIds");
+        HERE
 
         // Set Tracer Coordinates In Cell
         TracerParametricCoordinatesInCellArray[OutputDataObjectsIterator]->SetNumberOfComponents(this->Dimension);
@@ -1115,6 +1104,7 @@ void Interpolator::LocateTracersInDataGrid(
         TracerWeightsInCellArray[OutputDataObjectsIterator]->SetNumberOfComponents(NumberOfPointsInACell);
         TracerWeightsInCellArray[OutputDataObjectsIterator]->SetNumberOfTuples(NumberOfTracers);
         TracerWeightsInCellArray[OutputDataObjectsIterator]->SetName("TracerWeights");
+        HERE
 
         // Get Tracers Previous cell Ids
         vtkIdTypeArray *TracersPreviousCellIds = vtkIdTypeArray::SafeDownCast(OutputDataSet->GetPointData()->GetScalars("CellIds"));
@@ -1130,6 +1120,7 @@ void Interpolator::LocateTracersInDataGrid(
         {
             TracersPreviousCellIdsExists = false;
         }
+        HERE
 
         // Locate points in DataGrid //
         
