@@ -657,9 +657,6 @@ int Interpolator::RequestData(
         vtkInformationVector **inputVector,
         vtkInformationVector *outputVector)
 {
-    HERE
-    this->Test();
-
     // Input
     vtkInformation *inputInfo = inputVector[0]->GetInformationObject(0);
     vtkMultiBlockDataSet *input = vtkMultiBlockDataSet::SafeDownCast(inputInfo->Get(vtkDataObject::DATA_OBJECT()));
@@ -718,9 +715,6 @@ int Interpolator::RequestData(
     {
         std::cout << "Number of points: " << OutputPolyData->GetNumberOfPoints() << std::endl;
     }
-
-    /// Test 2 ///
-    // vtkAlgorithm *FlowMap = this->Get
 
     // Check output
     if(output == NULL)
@@ -815,14 +809,16 @@ bool Interpolator::Interpolate(
         OutputDataObjectsIterator < NumberOfOutputDataObjects;
         OutputDataObjectsIterator++)
     {
+        // TODO : delete the folowings after the work is done.
+
         // 1- CellIds of Tracers inside Data Grid
-        TracersCellIdsArray[OutputDataObjectsIterator] = vtkSmartPointer<vtkIdTypeArray>::New();
+        TracersCellIdsArray[OutputDataObjectsIterator] = vtkIdTypeArray::New();
 
         // 2- Local coordinates of tracers in the found cell
-        TracerParametricCoordinatesInCellArray[OutputDataObjectsIterator] = vtkSmartPointer<vtkDoubleArray>::New();
+        TracerParametricCoordinatesInCellArray[OutputDataObjectsIterator] = vtkDoubleArray::New();
 
         // 3- Weights of tracers in the cell found
-        TracerWeightsInCellArray[OutputDataObjectsIterator] = vtkSmartPointer<vtkDoubleArray>::New();
+        TracerWeightsInCellArray[OutputDataObjectsIterator] = vtkDoubleArray::New();
     }
 
     // Get the first of DataObject for points for geometry
@@ -846,10 +842,9 @@ bool Interpolator::Interpolate(
             FirstInputDataObject,
             OutputDataObjectsArray,
             NumberOfOutputDataObjects,
-            TracersCellIdsArray,              // Output
+            TracersCellIdsArray,                       // Output
             TracerParametricCoordinatesInCellArray,    // Output
-            TracerWeightsInCellArray);       // Output
-    HERE
+            TracerWeightsInCellArray);                 // Output
 
     // Loop over UpdateTimeSteps
     for(unsigned int UpdateTimeStepsIterator = 0;
@@ -879,6 +874,11 @@ bool Interpolator::Interpolate(
             OutputDataObjectsIterator < NumberOfOutputDataObjects;
             OutputDataObjectsIterator++)
         {
+            /// TEST ///
+            DISPLAY(UpdateTimeStepIntervalIndex)
+            DISPLAY(TimeSteps,TimeStepsLength)
+            DISPLAY(UpdateTimeSteps,UpdateTimeStepsLength)
+
             // Spatial Interpolation
             this->SpatioTemporalInterpolation(
                     InputDataObjectsArray[UpdateTimeStepIntervalIndex],
@@ -889,7 +889,6 @@ bool Interpolator::Interpolate(
                     TemporalInterpolationCoefficient);
         }
     }
-    HERE
 
     // Append Tracer's CellIds to Output DataObjects
     for(unsigned int OutputDataObjectsIterator = 0;
@@ -976,6 +975,9 @@ int Interpolator::FindIntervalIndexInArray(
         double *Array,
         unsigned int ArrayLength)
 {
+    /// TEST ///
+    DISPLAY(InquiryValue);
+    DISPLAY(Array,ArrayLength);
     // Initialize out of range flag
     int OUT_OF_RANGE_FLAG = -1;
 
@@ -986,7 +988,7 @@ int Interpolator::FindIntervalIndexInArray(
     for(unsigned int i=0; i<ArrayLength-1; i++)
     {
         // Check if value is in the interval
-        if(InquiryValue > Array[i] && InquiryValue < Array[i+1])
+        if(InquiryValue >= Array[i] && InquiryValue <= Array[i+1])
         {
             IntervalIndex = i;
             break;
@@ -1051,49 +1053,22 @@ void Interpolator::LocateTracersInDataGrid(
 
     // Get number of points of cells in Input DataSet
     unsigned int NumberOfPointsInACell = FirstInputDataSet->GetCell(1)->GetNumberOfPoints();
-    HERE
 
     // Loop over Output DataObjects (Blocks)
     for(unsigned int OutputDataObjectsIterator = 0;
         OutputDataObjectsIterator < NumberOfOutputDataObjects;
         OutputDataObjectsIterator++)
     {
-        // Convert DataObject to DataSet
+        // Cast DataObject to DataSet
         vtkDataSet *OutputDataSet = vtkDataSet::SafeDownCast(OutputDataObjectsArray[OutputDataObjectsIterator]);
 
         // Number of Tracers
         unsigned int NumberOfTracers = OutputDataSet->GetNumberOfPoints();
-        HERE
-
-        /// TEST ///
-        if(TracersCellIdsArray == NULL)
-        {
-            std::cout << "TracersCellIdsArray is NULL." << std::endl;
-        }
-        if(TracersCellIdsArray[OutputDataObjectsIterator] == NULL)
-        {
-            std::cout << "TracersCellIdsArray[OutputDataObject] is NULL." << std::endl;
-        }
-        else
-        {
-            std::cout << TracersCellIdsArray << std::endl;
-            std::cout << OutputDataObjectsIterator << std::endl;
-            HERE
-            std::cout << TracersCellIdsArray[0] << std::endl;
-            vtkIdTypeArray *IdTypeArray = TracersCellIdsArray[0];
-            // IdTypeArray->Print(std::cout);
-            IdTypeArray->SetNumberOfTuples(10);
-            HERE
-            // TracersCellIdsArray[OutputDataObjectsIterator]->Print(std::cout);
-            TracersCellIdsArray[0]->Print(std::cout);
-            HERE
-        }
 
         // Set Tracer CellIds
         TracersCellIdsArray[OutputDataObjectsIterator]->SetNumberOfComponents(1);
         TracersCellIdsArray[OutputDataObjectsIterator]->SetNumberOfTuples(NumberOfTracers);
         TracersCellIdsArray[OutputDataObjectsIterator]->SetName("CellIds");
-        HERE
 
         // Set Tracer Coordinates In Cell
         TracerParametricCoordinatesInCellArray[OutputDataObjectsIterator]->SetNumberOfComponents(this->Dimension);
@@ -1104,7 +1079,6 @@ void Interpolator::LocateTracersInDataGrid(
         TracerWeightsInCellArray[OutputDataObjectsIterator]->SetNumberOfComponents(NumberOfPointsInACell);
         TracerWeightsInCellArray[OutputDataObjectsIterator]->SetNumberOfTuples(NumberOfTracers);
         TracerWeightsInCellArray[OutputDataObjectsIterator]->SetName("TracerWeights");
-        HERE
 
         // Get Tracers Previous cell Ids
         vtkIdTypeArray *TracersPreviousCellIds = vtkIdTypeArray::SafeDownCast(OutputDataSet->GetPointData()->GetScalars("CellIds"));
@@ -1120,7 +1094,6 @@ void Interpolator::LocateTracersInDataGrid(
         {
             TracersPreviousCellIdsExists = false;
         }
-        HERE
 
         // Locate points in DataGrid //
         
@@ -1203,9 +1176,22 @@ void Interpolator::SpatioTemporalInterpolation(
     // Input DataSet on Left of time intrval
     vtkDataSet *InputDataSetLeft = vtkDataSet::SafeDownCast(InputDataObjectLeft);
 
+    // Check Input DataSet Left
+    if(InputDataSetLeft == NULL)
+    {
+        ERROR(<< "InputDataSetLeft is NULL.");
+        vtkErrorMacro("InputDataSetLeft is NULL.");
+    }
+    else if(InputDataSetLeft->GetNumberOfPoints() < 1)
+    {
+        ERROR(<< "InputDataSetLeft has no points.");
+        vtkErrorMacro("InputDataSetLeft has no points.");
+    }
+
     // Velocities on Left of time interval
     vtkDoubleArray *InputVelocitiesLeft = vtkDoubleArray::SafeDownCast(
-            InputDataSetLeft->GetPointData()->GetVectors("DataVelocities"));
+            InputDataSetLeft->GetPointData()->GetVectors("velocity"));
+            // InputDataSetLeft->GetPointData()->GetVectors("DataVelocities"));
 
     // Check Left Input Velocities
     if(InputVelocitiesLeft == NULL)
@@ -1223,15 +1209,32 @@ void Interpolator::SpatioTemporalInterpolation(
         ERROR(<< "Dimension of velocity data are not consistent.");
         vtkErrorMacro("Dimension of velocity data are not consistent.");
     }
+    HERE
+    InputDataObjectRight->Print(std::cout);
 
     // 2- On the Right of time interval //
 
     // Input DataSet on Right of time interval
     vtkDataSet *InputDataSetRight = vtkDataSet::SafeDownCast(InputDataObjectRight);
+    HERE
+
+    // Check Input DataSet Right
+    if(InputDataSetRight == NULL)
+    {
+        ERROR(<< "InputDataSetRight is NULL.");
+        vtkErrorMacro("InputDataSetRight is NULL.");
+    }
+    else if(InputDataSetRight->GetNumberOfPoints() < 1)
+    {
+        ERROR(<< "InputDataSetRight has no points.");
+        vtkErrorMacro("InputDataSetRight has no points.");
+    }
+    HERE
 
     // Velocities data on Right of time interval
     vtkDoubleArray *InputVelocitiesRight = vtkDoubleArray::SafeDownCast(
-            InputDataSetRight->GetPointData()->GetVectors("DataVelocities"));
+            InputDataSetRight->GetPointData()->GetVectors("velocity"));
+    HERE
 
     // Check Right Input Velocities
     if(InputVelocitiesLeft == NULL)
