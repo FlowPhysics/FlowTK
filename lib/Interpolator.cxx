@@ -403,9 +403,6 @@ int Interpolator::RequestUpdateExtent(
         vtkInformationVector **inputVector,
         vtkInformationVector *outputVector)
 {
-    HERE
-    this->Test();
-
     // Input
     vtkInformation *inputInfo = inputVector[0]->GetInformationObject(0);
 
@@ -428,7 +425,7 @@ int Interpolator::RequestUpdateExtent(
         return 0;
     }
 
-    // 1- TIME STEPS //
+    // 1- TIME STEPS from Input //
     
     // Check inputInfo has TIME_STEPS key
     if(!inputInfo->Has(FilterInformation::TIME_STEPS()))
@@ -439,27 +436,27 @@ int Interpolator::RequestUpdateExtent(
     }
 
     // Get Time Steps from Input
-    unsigned int TimeStepsLength = inputInfo->Length(FilterInformation::TIME_STEPS());
-    double *TimeSteps = inputInfo->Get(FilterInformation::TIME_STEPS());
+    unsigned int InputTimeStepsLength = inputInfo->Length(FilterInformation::TIME_STEPS());
+    double *InputTimeSteps = inputInfo->Get(FilterInformation::TIME_STEPS());
 
-    // Check TimeSteps
-    if(TimeStepsLength < 1)
+    // Check Input TimeSteps
+    if(InputTimeStepsLength < 1)
     {
-        ERROR(<< "TimeSteps length is zero.");
-        vtkErrorMacro("TimeSteps length is zero.");
+        ERROR(<< "InputTimeSteps length is zero.");
+        vtkErrorMacro("InputTimeSteps length is zero.");
         return 0;
     }
 
-    if(TimeSteps == NULL)
+    if(InputTimeSteps == NULL)
     {
-        ERROR(<< "TimeSteps is NULL.");
-        vtkErrorMacro("TimeSteps is NULL.");
+        ERROR(<< "InputTimeSteps is NULL.");
+        vtkErrorMacro("InputTimeSteps is NULL.");
         return 0;
     }
 
-    DISPLAY(TimeSteps,TimeStepsLength);
+    DISPLAY(InputTimeSteps,InputTimeStepsLength);
 
-    // UPDATE TIME STEPS FROM OUTPUT //
+    // 2- UPDATE TIME STEPS from Output //
     
     // Check outputInfo has UPDATE_TIME_STEPS key
     if(!outputInfo->Has(FilterInformation::UPDATE_TIME_STEPS()))
@@ -483,7 +480,7 @@ int Interpolator::RequestUpdateExtent(
 
     DISPLAY(OutputUpdateTimeSteps,OutputUpdateTimeStepsLength);
 
-    // UPDATE TIME STEPS FOR INPUT //
+    // 3- UPDATE TIME STEPS FOR INPUT //
 
     // Find Requested Indices of Time Steps
     unsigned int RequestIndex[OutputUpdateTimeStepsLength];
@@ -491,15 +488,18 @@ int Interpolator::RequestUpdateExtent(
 //    unsigned int NumberOfExtendedIndices = OutputUpdateTimeStepsLength;
     bool IndexFound = false;
 
+    // Loop over OutputUpdateTimeSteps
     for(unsigned int i=0; i<OutputUpdateTimeStepsLength; i++, IndexFound = false)
     {
         // Check if they are out of Time Range
         if(OutputUpdateTimeSteps[i]<TimeSteps[0] || OutputUpdateTimeSteps[i]>TimeSteps[TimeStepsLength-1])
         {
-            vtkErrorMacro("Interpolator >> RequestUpdateExtent >> Requested Update Time Step should be in Time Range.");
+            ERROR(<< "Requested Update Time Step should be in Time Range")
+            vtkErrorMacro("Requested Update Time Step should be in Time Range.");
             return 0;
         }
 
+        // Loop over InputTimeSteps
         for(unsigned int j=0; j<TimeStepsLength; j++)
         {
             if(fabs(OutputUpdateTimeSteps[i]-TimeSteps[j]) < this->SnapToTimeStepTolerance)
@@ -522,7 +522,8 @@ int Interpolator::RequestUpdateExtent(
 
         if(IndexFound == false)
         {
-            vtkErrorMacro("Interpolator >> RequestUpdateExtent >> Index not found.");
+            ERROR(<< "Index not found.");
+            vtkErrorMacro("Index not found.");
             return 0;
         }
     }
@@ -603,9 +604,6 @@ int Interpolator::RequestUpdateExtent(
 
     // Set Input Update Time Steps to Input
     inputInfo->Set(FilterInformation::UPDATE_TIME_STEPS(),InputUpdateTimeSteps,NumberOfSqueezedIndices);
-
-    HERE
-    this->Test();
 
     return 1;
 }
@@ -809,7 +807,7 @@ bool Interpolator::Interpolate(
         OutputDataObjectsIterator < NumberOfOutputDataObjects;
         OutputDataObjectsIterator++)
     {
-        // TODO : delete the folowings after the work is done.
+        // TODO : delete the folowings on memory after the work is done.
 
         // 1- CellIds of Tracers inside Data Grid
         TracersCellIdsArray[OutputDataObjectsIterator] = vtkIdTypeArray::New();
