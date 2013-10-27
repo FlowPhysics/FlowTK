@@ -133,6 +133,20 @@ class Interpolator : public vtkDataSetAlgorithm, public BaseFilter
                 double *Array,
                 unsigned int ArrayLength);
 
+        bool FindRequestedDataTimeIntervals(
+                double *InputDataTimeSteps,
+                unsigned int InputDataTimeStepsLength,
+                double *OutputUpdateTimeSteps,
+                unsigned int OutputUpdateTimeStepsLength,
+                unsigned int *RequestedDataTimeIntervals,    // Output
+                bool *InterpolationRequested);               // Output
+
+        bool ConvertIntervalsToIndices(
+                unsigned int *Intervals,
+                unsigned int NumberOfIntervals,
+                unsigned int *Indices,          // Output
+                unsigned int NumberOfIndices);  // Output
+
         double FindTemporalInterpolationCoefficient(
                 double UpdateTimeStep,
                 double TimeStepLeft,

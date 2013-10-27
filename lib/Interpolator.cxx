@@ -403,7 +403,7 @@ int Interpolator::RequestUpdateExtent(
         vtkInformationVector **inputVector,
         vtkInformationVector *outputVector)
 {
-    // Input
+    // Input Information
     vtkInformation *inputInfo = inputVector[0]->GetInformationObject(0);
 
     // Check inputInfo
@@ -414,7 +414,7 @@ int Interpolator::RequestUpdateExtent(
         return 0;
     }
 
-    // Output
+    // Output Information
     vtkInformation *outputInfo = outputVector->GetInformationObject(0);
 
     // Check outputInfo
@@ -425,36 +425,36 @@ int Interpolator::RequestUpdateExtent(
         return 0;
     }
 
-    // 1- TIME STEPS from Input //
+    // 1- DATA TIME STEPS from Input //
     
-    // Check inputInfo has TIME_STEPS key
-    if(!inputInfo->Has(FilterInformation::TIME_STEPS()))
+    // Check inputInfo has DATA_TIME_STEPS key
+    if(!inputInfo->Has(FilterInformation::DATA_TIME_STEPS()))
     {
-        ERROR(<< "inputInfo does not have TIME_STEPS key.");
-        vtkErrorMacro("inputInfo does not have TIME_STEPS key.");
+        ERROR(<< "inputInfo does not have DATA_TIME_STEPS key.");
+        vtkErrorMacro("inputInfo does not have DATA_TIME_STEPS key.");
         return 0;
     }
 
     // Get Time Steps from Input
-    unsigned int InputTimeStepsLength = inputInfo->Length(FilterInformation::TIME_STEPS());
-    double *InputTimeSteps = inputInfo->Get(FilterInformation::TIME_STEPS());
+    unsigned int InputDataTimeStepsLength = inputInfo->Length(FilterInformation::DATA_TIME_STEPS());
+    double *InputDataTimeSteps = inputInfo->Get(FilterInformation::DATA_TIME_STEPS());
 
-    // Check Input TimeSteps
-    if(InputTimeStepsLength < 1)
+    // Check Input Data TimeSteps
+    if(InputDataTimeStepsLength < 1)
     {
-        ERROR(<< "InputTimeSteps length is zero.");
-        vtkErrorMacro("InputTimeSteps length is zero.");
+        ERROR(<< "InputDataTimeSteps length is zero.");
+        vtkErrorMacro("InputDataTimeSteps length is zero.");
         return 0;
     }
 
-    if(InputTimeSteps == NULL)
+    if(InputDataTimeSteps == NULL)
     {
-        ERROR(<< "InputTimeSteps is NULL.");
-        vtkErrorMacro("InputTimeSteps is NULL.");
+        ERROR(<< "InputDataTimeSteps is NULL.");
+        vtkErrorMacro("InputDataTimeSteps is NULL.");
         return 0;
     }
 
-    DISPLAY(InputTimeSteps,InputTimeStepsLength);
+    DISPLAY(InputDataTimeSteps,InputDataTimeStepsLength);
 
     // 2- UPDATE TIME STEPS from Output //
     
@@ -473,8 +473,8 @@ int Interpolator::RequestUpdateExtent(
     // Check UpdateTimeSteps
     if(OutputUpdateTimeStepsLength < 1)
     {
-        ERROR(<< "No update requested.");
-        vtkErrorMacro("Interpolator >> RequestUpdateExtent >> No update requested.");
+        WARNING(<< "No update requested.");
+        vtkErrorMacro("No update requested.");
         return 0;
     }
 
@@ -482,67 +482,148 @@ int Interpolator::RequestUpdateExtent(
 
     // 3- UPDATE TIME STEPS FOR INPUT //
 
-    // Find Requested Indices of Time Steps
-    unsigned int RequestIndex[OutputUpdateTimeStepsLength];
-    bool RequestInterpolation[OutputUpdateTimeStepsLength];
-//    unsigned int NumberOfExtendedIndices = OutputUpdateTimeStepsLength;
-    bool IndexFound = false;
+    // Requested data TimeStep Intervals
+    unsigned int RequestedDataTimeIntervals = OutputUpdateTimeSteps;
+    unsigned int *RequestedDataTimeStepIndices[RequestedDataTimeIntervalsLength];
+    unsigned int *InterpolationRequested[RequestedDataTimeStepsIntervalLength];
 
-    // Loop over OutputUpdateTimeSteps
-    for(unsigned int i=0; i<OutputUpdateTimeStepsLength; i++, IndexFound = false)
+    this->FindRequestedDataTimeIntervals(
+            InputDataTimeSteps,
+            InputDataTimeStepsLength,
+            OutputUpdateTimeSteps,
+            OutputUpdateTimeStepsLength,
+            RequestedDataTimeIntervals,          // Output
+            InterpolationRequested);             // Output
+
+    this->FindRequestedDataTimeStepsIndices(
+            RequestedDataTimeIntervals,
+            RequestedDataTimeIntervalsLength,
+            RequestedDataTimeStepIndices,         //Output
+            RequestedDataTimeStepIndicesLength);  // Output
+    
+
+//    DISPLAY(SqueezedRequestIndex,NumberOfSqueezedIndices);
+
+    // Check sorted
+    if(NumberOfSqueezedIndices>1)
     {
-        // Check if they are out of Time Range
-        if(OutputUpdateTimeSteps[i]<TimeSteps[0] || OutputUpdateTimeSteps[i]>TimeSteps[TimeStepsLength-1])
+        for(unsigned int i=0; i<NumberOfSqueezedIndices-1; i++)
         {
-            ERROR(<< "Requested Update Time Step should be in Time Range")
-            vtkErrorMacro("Requested Update Time Step should be in Time Range.");
-            return 0;
-        }
-
-        // Loop over InputTimeSteps
-        for(unsigned int j=0; j<TimeStepsLength; j++)
-        {
-            if(fabs(OutputUpdateTimeSteps[i]-TimeSteps[j]) < this->SnapToTimeStepTolerance)
+            if(SqueezedRequestIndex[i]>SqueezedRequestIndex[i+1])
             {
-                RequestIndex[i] = j;
-                RequestInterpolation[i] = false;
-                IndexFound = true;
-                break;
+                vtkErrorMacro("Interpolator >> RequestUpdateExtent >> SqueezedRequestIndex are not sorted.");
+                return 0;
             }
-            else if(j<TimeStepsLength-1 && 
-                    OutputUpdateTimeSteps[i] > TimeSteps[j] && 
-                    OutputUpdateTimeSteps[i] < TimeSteps[j+1])
-            {
-                RequestIndex[i] = j;
-                RequestInterpolation[i] = true;
-                IndexFound = true;
-                break;
-            }
-        }
-
-        if(IndexFound == false)
-        {
-            ERROR(<< "Index not found.");
-            vtkErrorMacro("Index not found.");
-            return 0;
         }
     }
 
-    DISPLAY(RequestIndex,OutputUpdateTimeStepsLength);
-    DISPLAY(RequestInterpolation,OutputUpdateTimeStepsLength);
+    // Convert Indices to Time Steps
+    double InputUpdateTimeSteps[NumberOfSqueezedIndices];
 
-    // Extent Request Index
-    vtkstd::vector<unsigned int> ExtendedRequestIndex;
-    unsigned int NumberOfExtendedIndices = 0;
-
-    for(unsigned int i=0; i<OutputUpdateTimeStepsLength; i++)
+    for(unsigned int i=0; i<NumberOfSqueezedIndices; i++)
     {
-//        ExtendedRequestIndex[NumberOfExtendedIndices] = RequestIndex[i];
+        InputUpdateTimeSteps[i] = InputTimeSteps[SqueezedRequestIndex[i]];
+    }
+
+    DISPLAY(InputUpdateTimeSteps,NumberOfSqueezedIndices)
+
+    // Set Input Update Time Steps to Input
+    inputInfo->Set(FilterInformation::UPDATE_TIME_STEPS(),InputUpdateTimeSteps,NumberOfSqueezedIndices);
+
+    return 1;
+}
+
+// =======================================
+// Find Requested Data Time Step Intervals
+// =======================================
+
+bool Interpolator::FindRequestedDataTimeIntervals(
+        double *InputDataTimeSteps,
+        unsigned int InputDataTimeStepsLength,
+        double *OutputUpdateTimeSteps,
+        unsigned int OutputUpdateTimeStepsLength,
+        unsigned int *RequestedDataTimeIntervals,       // Output
+        bool *InterpolationRequested)                   // Output
+{
+    // Status of finding intervals
+    bool IntervalFound;
+
+    // Loop over OutputUpdateTimeSteps
+    for(unsigned int OutputUpdateTimeStepsIterator = 0;
+        OutputUpdateTimeStepsIterator < OutputUpdateTimeStepsLength;
+        OutputUpdateTimeStepsIterator++, IntervalFound = false)
+    {
+        // Check if UpdateTimeSteps are in the Time Range
+        if(OutputUpdateTimeSteps[i] < InputTimeSteps[0] || 
+           OutputUpdateTimeSteps[i] > InputTimeSteps[InputTimeStepsLength-1])
+        {
+            ERROR(<< "Requested Update Time Step should be in Time Range")
+            vtkErrorMacro("Requested Update Time Step should be in Time Range.");
+            return false;
+        }
+
+        // Loop over InputDataTimeSteps
+        for(unsigned int InputDataTimeStepsIterator=0;
+            InputDataTimeStepsIterator < InputDataTimeStepsLength;
+            InputDataTimeStepsIterator++)
+        {
+            // Requested times that Snapped to data times do not need interpolation
+            double SnapToTimeStepDifference = OutputUpdateTimeSteps[OutputUpdateTimeStepsIterator] - 
+                InputTimeSteps[InputTimeStepsIterator];
+            if(fabs(SnapToTimeiStepDifference) < this->SnapToTimeStepTolerance)
+            {
+                RequestedDataTimeIntervals[OutputUpdateTimeStepsIterator] = InputDataTimeStepsIterator;
+                InterpolationRequested[OutputUpdateTimeStepsIterator] = false;
+                IntervalFound = true;
+                break;
+            }
+
+            // Find Interval
+            else if(InputDataTimeStepsIterator < InputDataTimeStepsLength-1 &&
+                    OutputUpdateTimeSteps[OutputUpdateTimeStepsIterator] > InputDataTimeSteps[InputDataTimeStepsIterator] && 
+                    OutputUpdateTimeSteps[OutputUpdateTimeStepsIterator] < InputDataTimeSteps[InputDataTimeStepsIterator+1])
+            {
+                RequestedDataTimeIntervals[OutputUpdateTimeStepsiterator] = InputDataTimeStepsIterator;
+                InterpolationRequested[OutputUpdateTimeStepsIterator] = true;
+                IntervalFound = true;
+                break;
+            }
+        }
+
+        if(IntervalFound == false)
+        {
+            ERROR(<< "Interval not found.");
+            vtkErrorMacro("Interval not found.");
+            return false;
+        }
+    }
+
+    DISPLAY(RequestedDataTimeIntervals,OutputUpdateTimeStepsLength);
+    DISPLAY(InterpolationRequested,OutputUpdateTimeStepsLength);
+
+    return true;
+}
+
+// ============================
+// Convert Intervals To Indices
+// ============================
+
+bool Interpolator::ConvertIntervalsToIndices(
+        unsigned int *Intervals,
+        unsigned int NumberOfIntervals,
+        unsigned int *Indices,            // Output
+        unsigned int NumberOfIndices)     // Output
+{
+    // Indices Vector
+    vtkstd::vector<unsigned int> IndicesVector;
+    unsigned int IndicesVectorLength = 0;
+
+    for(unsigned int IntervalsIterator=0; IntervalsIterator < NumberOfIntervals; IntervalsIterator++)
+    {
         ExtendedRequestIndex.push_back(RequestIndex[i]);
         NumberOfExtendedIndices++;
         if(RequestInterpolation[i] == true)
         {
-//            ExtendedRequestIndex[NumberOfExtendedIndices] = RequestIndex[i] + 1;
             ExtendedRequestIndex.push_back(RequestIndex[i] + 1);
             NumberOfExtendedIndices++;
         }
@@ -577,35 +658,6 @@ int Interpolator::RequestUpdateExtent(
         }
     }
 
-//    DISPLAY(SqueezedRequestIndex,NumberOfSqueezedIndices);
-
-    // Check sorted
-    if(NumberOfSqueezedIndices>1)
-    {
-        for(unsigned int i=0; i<NumberOfSqueezedIndices-1; i++)
-        {
-            if(SqueezedRequestIndex[i]>SqueezedRequestIndex[i+1])
-            {
-                vtkErrorMacro("Interpolator >> RequestUpdateExtent >> SqueezedRequestIndex are not sorted.");
-                return 0;
-            }
-        }
-    }
-
-    // Convert Indices to Time Steps
-    double InputUpdateTimeSteps[NumberOfSqueezedIndices];
-
-    for(unsigned int i=0; i<NumberOfSqueezedIndices; i++)
-    {
-        InputUpdateTimeSteps[i] = TimeSteps[SqueezedRequestIndex[i]];
-    }
-
-    DISPLAY(InputUpdateTimeSteps,NumberOfSqueezedIndices)
-
-    // Set Input Update Time Steps to Input
-    inputInfo->Set(FilterInformation::UPDATE_TIME_STEPS(),InputUpdateTimeSteps,NumberOfSqueezedIndices);
-
-    return 1;
 }
 
 // ====

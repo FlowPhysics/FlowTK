@@ -106,6 +106,26 @@ vtkInformationDoubleVectorKey * FilterInformation::TIME_RANGE()
     return TIME_RANGE_KEY;
 }
 
+// ===================
+// DATA_TIME_STEPS Key
+// ===================
+
+vtkInformationDoubleVectorKey * FilterInformation::DATA_TIME_STEPS()
+{
+    // Key Settings
+    const char * DataTimeStepsKeyName = "DATA_TIME_STEPS";
+    const char * DataTimeStepsKeyLocation = FilterInformation::GetStaticFilterName();
+    int DataTimeStepsKeyLength = -1;
+
+    // Create Key
+    static vtkInformationDoubleVectorKey * DATA_TIME_STEPS_KEY = new vtkInformationDoubleVectorKey(
+            DataTimeStepsKeyName,
+            DataTimeStepsKeyLocation,
+            DataTimeStepsKeyLength);
+
+    return DATA_TIME_STEPS_KEY;
+}
+
 // =====================
 // UPDATE_TIME_STEPS Key
 // =====================

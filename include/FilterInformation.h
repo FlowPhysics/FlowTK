@@ -64,6 +64,7 @@ class FilterInformation : public vtkInformation, public BaseFilter
 		// Keys
 		static vtkInformationDoubleVectorKey * TIME_STEPS();
 		static vtkInformationDoubleVectorKey * TIME_RANGE();
+		static vtkInformationDoubleVectorKey * DATA_TIME_STEPS();
 		static vtkInformationDoubleVectorKey * UPDATE_TIME_STEPS();
         
     protected:
