@@ -30,6 +30,7 @@
 
 // General
 #include <vtkSmartPointer.h>
+#include <assert.h>
 
 // Key
 #include <vtkInformationDoubleVectorKey.h>
@@ -487,7 +488,8 @@ int Interpolator::RequestUpdateExtent(
     unsigned int *RequestedDataTimeStepIndices[RequestedDataTimeIntervalsLength];
     unsigned int *InterpolationRequested[RequestedDataTimeStepsIntervalLength];
 
-    this->FindRequestedDataTimeIntervals(
+    // Find time intervals of requsted data
+    bool CheckIntervals = this->FindRequestedDataTimeIntervals(
             InputDataTimeSteps,
             InputDataTimeStepsLength,
             OutputUpdateTimeSteps,
@@ -495,37 +497,24 @@ int Interpolator::RequestUpdateExtent(
             RequestedDataTimeIntervals,          // Output
             InterpolationRequested);             // Output
 
-    this->FindRequestedDataTimeStepsIndices(
+    // Check if intervals found successfully
+    assert(CheckIntervals);
+
+    // Declare TimeStep indices vector
+    vtkstd::vector<unsigned int> RequestedDataTimeStepIndices;
+
+    // find requested indices of data
+    bool CheckIndices = this->ConvertIntervalsToIndices(
             RequestedDataTimeIntervals,
             RequestedDataTimeIntervalsLength,
-            RequestedDataTimeStepIndices,         //Output
-            RequestedDataTimeStepIndicesLength);  // Output
+            RequestedDataTimeStepIndices);       //Output
     
+    // Check if Indices found successfully
+    assert(CheckIndices);
 
-//    DISPLAY(SqueezedRequestIndex,NumberOfSqueezedIndices);
+    // Sort Indices vector
+    vtkstd::sort(RequestedDataTimeStepIndices.begin(),RequestedDataTimeStepIndices.end());
 
-    // Check sorted
-    if(NumberOfSqueezedIndices>1)
-    {
-        for(unsigned int i=0; i<NumberOfSqueezedIndices-1; i++)
-        {
-            if(SqueezedRequestIndex[i]>SqueezedRequestIndex[i+1])
-            {
-                vtkErrorMacro("Interpolator >> RequestUpdateExtent >> SqueezedRequestIndex are not sorted.");
-                return 0;
-            }
-        }
-    }
-
-    // Convert Indices to Time Steps
-    double InputUpdateTimeSteps[NumberOfSqueezedIndices];
-
-    for(unsigned int i=0; i<NumberOfSqueezedIndices; i++)
-    {
-        InputUpdateTimeSteps[i] = InputTimeSteps[SqueezedRequestIndex[i]];
-    }
-
-    DISPLAY(InputUpdateTimeSteps,NumberOfSqueezedIndices)
 
     // Set Input Update Time Steps to Input
     inputInfo->Set(FilterInformation::UPDATE_TIME_STEPS(),InputUpdateTimeSteps,NumberOfSqueezedIndices);
@@ -546,7 +535,7 @@ bool Interpolator::FindRequestedDataTimeIntervals(
         bool *InterpolationRequested)                   // Output
 {
     // Status of finding intervals
-    bool IntervalFound;
+    bool IntervalFound = false;
 
     // Loop over OutputUpdateTimeSteps
     for(unsigned int OutputUpdateTimeStepsIterator = 0;
@@ -611,53 +600,74 @@ bool Interpolator::FindRequestedDataTimeIntervals(
 bool Interpolator::ConvertIntervalsToIndices(
         unsigned int *Intervals,
         unsigned int NumberOfIntervals,
-        unsigned int *Indices,            // Output
-        unsigned int NumberOfIndices)     // Output
+        vtkstd::vector<unsigned int> &Indices)     // Output
 {
-    // Indices Vector
-    vtkstd::vector<unsigned int> IndicesVector;
-    unsigned int IndicesVectorLength = 0;
+    // Staked Indices vector
+    vtkstd::vector<unsigned int> StakedIndicesVector;
 
+    // Loop over Intervals
     for(unsigned int IntervalsIterator=0; IntervalsIterator < NumberOfIntervals; IntervalsIterator++)
     {
-        ExtendedRequestIndex.push_back(RequestIndex[i]);
-        NumberOfExtendedIndices++;
-        if(RequestInterpolation[i] == true)
-        {
-            ExtendedRequestIndex.push_back(RequestIndex[i] + 1);
-            NumberOfExtendedIndices++;
-        }
+        // Add Left index of Interval
+        StakedIndicesVector.push_back(Interval[IntervalIterator]);
+
+        // Add right index of Interval
+        StakedIndicesVector.push_back(Interval[IntervalIterator] + 1);
     }
 
-//    DISPLAY(ExtendedRequestIndex,NumberOfExtendedIndices);
+    // Remove (squeeze) repetitive indices
+    std::vector<unsigned int> SqueezedIndicesVector;
+    SqueezedIndicesVector.push_back(StakedIndicesVector[0]);
 
-    // Remove repetitive indices
-    std::vector<unsigned int> SqueezedRequestIndex;
-    SqueezedRequestIndex.push_back(ExtendedRequestIndex[0]);
-    unsigned int NumberOfSqueezedIndices = 1;
-
-    if(NumberOfExtendedIndices > 1)
+    if(StakedIndicesVector.size() > 1)
     {
         bool IndexRepeated = false;
-        for(unsigned int i=1; i<NumberOfExtendedIndices; i++, IndexRepeated=false)
+
+        // Loop  over all new indices
+        for(unsigned int i = 1; i < StakedIndicesVector.size(); i++, IndexRepeated=false)
         {
+            // Loop over  previous indices
             for(unsigned int j=0; j<i; j++)
             {
-                if(ExtendedRequestIndex[j] == ExtendedRequestIndex[i])
+                if(StakedIndicesVector[j] == StakedIndicesVector[i])
                 {
                     IndexRepeated = true;
                     break;
                 }
             }
+
+            // store non-repeated indices
             if(IndexRepeated == false)
             {
-//                ExtendedRequestIndex[NumberOfSqueezedIndices] = ExtendedRequestIndex[i];
-                SqueezedRequestIndex.push_back(ExtendedRequestIndex[i]);
-                NumberOfSqueezedIndices++;
+                SqueezedIndicesVector.push_back(StakedIndicesVector[i]);
             }
         }
     }
 
+    // Convert Vector to Array
+    NumberOfIndices
+
+}
+
+// ============================
+// Convert Indices To TimeSteps
+// ============================
+
+void Interpolator::ConvertIndocesToTimeSteps(
+        double *DataTimeSteps,
+        unsigned int DataTimeStepsLength,
+        unsigned int *RequestTimeStepIndices,
+        unsigned int RequestTimeStepIndicesLength,
+        double *RequestTimeSteps)
+{
+    for(unsigned int i=0; i < RequestTimeStepIndicesLength; i++)
+    {
+        // Check index
+        assert(RequestTimeStepIndices[i] < DataTimeStepsLength);
+
+        // Convert to time step value
+        RequestTimeSteps[i] = DataTimeSteps[RequestTimeStepIndices[i]];
+    }
 }
 
 // ====

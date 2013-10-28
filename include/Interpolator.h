@@ -144,8 +144,14 @@ class Interpolator : public vtkDataSetAlgorithm, public BaseFilter
         bool ConvertIntervalsToIndices(
                 unsigned int *Intervals,
                 unsigned int NumberOfIntervals,
-                unsigned int *Indices,          // Output
-                unsigned int NumberOfIndices);  // Output
+                vtkstd::vector<unsigned int> &Indices);      // Output
+
+        void ConvertIndicesToTimeSteps(
+                double DataTimeSteps,
+                unsigned int DataTimeStepsLength,
+                unsigned int *RequestTimeStepIndices,
+                unsigned int *RequestTimeStepIndicesLength,
+                double *RequestTimeSteps);                   // Output
 
         double FindTemporalInterpolationCoefficient(
                 double UpdateTimeStep,
