@@ -35,6 +35,8 @@ class vtkMultiBlockDataSet;
 class vtkIdTypeArray;
 class vtkDoubleArray;
 class vtkPoints;
+// class vector;
+#include <vector>
 
 // =====
 // Types
@@ -141,17 +143,17 @@ class Interpolator : public vtkDataSetAlgorithm, public BaseFilter
                 unsigned int *RequestedDataTimeIntervals,    // Output
                 bool *InterpolationRequested);               // Output
 
-        bool ConvertIntervalsToIndices(
+        void ConvertIntervalsToIndices(
                 unsigned int *Intervals,
                 unsigned int NumberOfIntervals,
                 vtkstd::vector<unsigned int> &Indices);      // Output
 
         void ConvertIndicesToTimeSteps(
-                double DataTimeSteps,
+                double *DataTimeSteps,
                 unsigned int DataTimeStepsLength,
-                unsigned int *RequestTimeStepIndices,
-                unsigned int *RequestTimeStepIndicesLength,
-                double *RequestTimeSteps);                   // Output
+                unsigned int *RequestedDataTimeStepIndices,
+                unsigned int RequestedDataTimeStepIndicesLength,
+                double *RequestedDataTimeSteps);             // Output
 
         double FindTemporalInterpolationCoefficient(
                 double UpdateTimeStep,

@@ -31,6 +31,7 @@
 // General
 #include <vtkSmartPointer.h>
 #include <assert.h>
+#include <algorithm>  // for std::sort
 
 // Key
 #include <vtkInformationDoubleVectorKey.h>
@@ -484,9 +485,9 @@ int Interpolator::RequestUpdateExtent(
     // 3- UPDATE TIME STEPS FOR INPUT //
 
     // Requested data TimeStep Intervals
-    unsigned int RequestedDataTimeIntervals = OutputUpdateTimeSteps;
-    unsigned int *RequestedDataTimeStepIndices[RequestedDataTimeIntervalsLength];
-    unsigned int *InterpolationRequested[RequestedDataTimeStepsIntervalLength];
+    unsigned int RequestedDataTimeIntervals[OutputUpdateTimeStepsLength];
+    unsigned int RequestedDataTimeIntervalsLength = OutputUpdateTimeStepsLength;
+    bool InterpolationRequested[OutputUpdateTimeStepsLength];
 
     // Find time intervals of requsted data
     bool CheckIntervals = this->FindRequestedDataTimeIntervals(
@@ -504,20 +505,28 @@ int Interpolator::RequestUpdateExtent(
     vtkstd::vector<unsigned int> RequestedDataTimeStepIndices;
 
     // find requested indices of data
-    bool CheckIndices = this->ConvertIntervalsToIndices(
+    this->ConvertIntervalsToIndices(
             RequestedDataTimeIntervals,
             RequestedDataTimeIntervalsLength,
-            RequestedDataTimeStepIndices);       //Output
+            RequestedDataTimeStepIndices);        //Output
     
-    // Check if Indices found successfully
-    assert(CheckIndices);
-
     // Sort Indices vector
     vtkstd::sort(RequestedDataTimeStepIndices.begin(),RequestedDataTimeStepIndices.end());
 
+    // Declare Input Update Time Steps
+    unsigned int InputUpdateTimeStepsLength = RequestedDataTimeStepIndices.size();
+    double InputUpdateTimeSteps[InputUpdateTimeStepsLength];
+
+    // Convert Indices to Time Steps
+    this->ConvertIndicesToTimeSteps(
+            InputDataTimeSteps,
+            InputDataTimeStepsLength,
+            &RequestedDataTimeStepIndices[0],
+            RequestedDataTimeStepIndices.size(),
+            InputUpdateTimeSteps);              // Output 
 
     // Set Input Update Time Steps to Input
-    inputInfo->Set(FilterInformation::UPDATE_TIME_STEPS(),InputUpdateTimeSteps,NumberOfSqueezedIndices);
+    inputInfo->Set(FilterInformation::UPDATE_TIME_STEPS(),InputUpdateTimeSteps,InputUpdateTimeStepsLength);
 
     return 1;
 }
@@ -543,8 +552,8 @@ bool Interpolator::FindRequestedDataTimeIntervals(
         OutputUpdateTimeStepsIterator++, IntervalFound = false)
     {
         // Check if UpdateTimeSteps are in the Time Range
-        if(OutputUpdateTimeSteps[i] < InputTimeSteps[0] || 
-           OutputUpdateTimeSteps[i] > InputTimeSteps[InputTimeStepsLength-1])
+        if(OutputUpdateTimeSteps[OutputUpdateTimeStepsIterator] < InputDataTimeSteps[0] || 
+           OutputUpdateTimeSteps[OutputUpdateTimeStepsIterator] > InputDataTimeSteps[InputDataTimeStepsLength-1])
         {
             ERROR(<< "Requested Update Time Step should be in Time Range")
             vtkErrorMacro("Requested Update Time Step should be in Time Range.");
@@ -558,8 +567,8 @@ bool Interpolator::FindRequestedDataTimeIntervals(
         {
             // Requested times that Snapped to data times do not need interpolation
             double SnapToTimeStepDifference = OutputUpdateTimeSteps[OutputUpdateTimeStepsIterator] - 
-                InputTimeSteps[InputTimeStepsIterator];
-            if(fabs(SnapToTimeiStepDifference) < this->SnapToTimeStepTolerance)
+                InputDataTimeSteps[InputDataTimeStepsIterator];
+            if(fabs(SnapToTimeStepDifference) < this->SnapToTimeStepTolerance)
             {
                 RequestedDataTimeIntervals[OutputUpdateTimeStepsIterator] = InputDataTimeStepsIterator;
                 InterpolationRequested[OutputUpdateTimeStepsIterator] = false;
@@ -572,7 +581,7 @@ bool Interpolator::FindRequestedDataTimeIntervals(
                     OutputUpdateTimeSteps[OutputUpdateTimeStepsIterator] > InputDataTimeSteps[InputDataTimeStepsIterator] && 
                     OutputUpdateTimeSteps[OutputUpdateTimeStepsIterator] < InputDataTimeSteps[InputDataTimeStepsIterator+1])
             {
-                RequestedDataTimeIntervals[OutputUpdateTimeStepsiterator] = InputDataTimeStepsIterator;
+                RequestedDataTimeIntervals[OutputUpdateTimeStepsIterator] = InputDataTimeStepsIterator;
                 InterpolationRequested[OutputUpdateTimeStepsIterator] = true;
                 IntervalFound = true;
                 break;
@@ -597,7 +606,7 @@ bool Interpolator::FindRequestedDataTimeIntervals(
 // Convert Intervals To Indices
 // ============================
 
-bool Interpolator::ConvertIntervalsToIndices(
+void Interpolator::ConvertIntervalsToIndices(
         unsigned int *Intervals,
         unsigned int NumberOfIntervals,
         vtkstd::vector<unsigned int> &Indices)     // Output
@@ -609,10 +618,10 @@ bool Interpolator::ConvertIntervalsToIndices(
     for(unsigned int IntervalsIterator=0; IntervalsIterator < NumberOfIntervals; IntervalsIterator++)
     {
         // Add Left index of Interval
-        StakedIndicesVector.push_back(Interval[IntervalIterator]);
+        StakedIndicesVector.push_back(Intervals[IntervalsIterator]);
 
         // Add right index of Interval
-        StakedIndicesVector.push_back(Interval[IntervalIterator] + 1);
+        StakedIndicesVector.push_back(Intervals[IntervalsIterator] + 1);
     }
 
     // Remove (squeeze) repetitive indices
@@ -626,7 +635,7 @@ bool Interpolator::ConvertIntervalsToIndices(
         // Loop  over all new indices
         for(unsigned int i = 1; i < StakedIndicesVector.size(); i++, IndexRepeated=false)
         {
-            // Loop over  previous indices
+            // Loop over previous indices
             for(unsigned int j=0; j<i; j++)
             {
                 if(StakedIndicesVector[j] == StakedIndicesVector[i])
@@ -644,29 +653,30 @@ bool Interpolator::ConvertIntervalsToIndices(
         }
     }
 
-    // Convert Vector to Array
-    NumberOfIndices
-
+    // output Indices
+    Indices = SqueezedIndicesVector;
 }
 
 // ============================
 // Convert Indices To TimeSteps
 // ============================
 
-void Interpolator::ConvertIndocesToTimeSteps(
-        double *DataTimeSteps,
-        unsigned int DataTimeStepsLength,
-        unsigned int *RequestTimeStepIndices,
-        unsigned int RequestTimeStepIndicesLength,
-        double *RequestTimeSteps)
+void Interpolator::ConvertIndicesToTimeSteps(
+        double *InputDataTimeSteps,
+        unsigned int InputDataTimeStepsLength,
+        unsigned int *RequestedDataTimeStepIndices,
+        unsigned int RequestedDataTimeStepIndicesLength,
+        double *RequestedDataTimeSteps)                // Output
 {
-    for(unsigned int i=0; i < RequestTimeStepIndicesLength; i++)
+    for(unsigned int IndicesIterator=0;
+        IndicesIterator < RequestedDataTimeStepIndicesLength;
+        IndicesIterator++)
     {
         // Check index
-        assert(RequestTimeStepIndices[i] < DataTimeStepsLength);
+        assert(RequestedDataTimeStepIndices[IndicesIterator] < InputDataTimeStepsLength);
 
         // Convert to time step value
-        RequestTimeSteps[i] = DataTimeSteps[RequestTimeStepIndices[i]];
+        RequestedDataTimeSteps[IndicesIterator] = InputDataTimeSteps[RequestedDataTimeStepIndices[IndicesIterator]];
     }
 }
 
