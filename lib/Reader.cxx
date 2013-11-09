@@ -329,67 +329,67 @@ int Reader::RequestInformation(
         return 0;
     }
 
-    // 1- TIME STEPS //
+    // 1- DATA TIME STEPS //
 
     // Check if Key Exists in outputInfo
-    bool InitializeTimeStepsKey = false;
+    bool InitializeDataTimeStepsKey = false;
 
     // Check if key is included in outputInfo
-    if(!outputInfoPort0->Has(FilterInformation::TIME_STEPS()))
+    if(!outputInfoPort0->Has(FilterInformation::DATA_TIME_STEPS()))
     {
-        InitializeTimeStepsKey = true;
+        InitializeDataTimeStepsKey = true;
     }
     else
     {
         // Check if key length is correct
-        if(outputInfoPort0->Length(FilterInformation::TIME_STEPS()) != 
+        if(outputInfoPort0->Length(FilterInformation::DATA_TIME_STEPS()) != 
                 static_cast<int>(this->NumberOfFileSeries))
         {
-            InitializeTimeStepsKey = true;
+            InitializeDataTimeStepsKey = true;
         }
 
         // Check if key values are not empty
-        if(outputInfoPort0->Get(FilterInformation::TIME_STEPS()) == NULL)
+        if(outputInfoPort0->Get(FilterInformation::DATA_TIME_STEPS()) == NULL)
         {
-            InitializeTimeStepsKey = true;
+            InitializeDataTimeStepsKey = true;
         }
     }
 
-    // Initialize TimeSteps Key
-    if(InitializeTimeStepsKey == true)
+    // Initialize DataTimeSteps Key
+    if(InitializeDataTimeStepsKey == true)
     {
-        // TimeSteps Key Length
-        int TimeStepsKeyLength = this->NumberOfFileSeries;
+        // DataTimeSteps Key Length
+        int DataTimeStepsKeyLength = this->NumberOfFileSeries;
 
-        // TimeSteps Values
-        double TimeSteps[TimeStepsKeyLength];
+        // DataTimeSteps Values
+        double DataTimeSteps[DataTimeStepsKeyLength];
 
-        // Check if files have default time steps
-        bool TimeStepsAvailable = this->GetFilesTimeSteps();
+        // Check if files have default data time steps
+        bool DataTimeStepsAvailable = this->GetFilesTimeSteps();
 
-        if(TimeStepsAvailable == true)
+        if(DataTimeStepsAvailable == true)
         {
             // Use default time steps in files
-            for(unsigned int i=0; static_cast<int>(i)<TimeStepsKeyLength; i++)
+            for(unsigned int i=0; static_cast<int>(i)<DataTimeStepsKeyLength; i++)
             {
-                TimeSteps[i] = this->FileTimeSteps[i];
+                DataTimeSteps[i] = this->FileTimeSteps[i];
             }
         }
         else
         {
             // Use file index for time steps
-            for(unsigned int i=0; static_cast<int>(i)<TimeStepsKeyLength; i++)
+            for(unsigned int i=0; static_cast<int>(i)<DataTimeStepsKeyLength; i++)
             {
-                TimeSteps[i] = double(i);
+                DataTimeSteps[i] = double(i);
             }
         }
 
         // Add values to key in outputInfo
-        outputInfoPort0->Set(FilterInformation::TIME_STEPS(),TimeSteps,TimeStepsKeyLength);
-        outputInfoPort1->Set(FilterInformation::TIME_STEPS(),TimeSteps,TimeStepsKeyLength);
+        outputInfoPort0->Set(FilterInformation::DATA_TIME_STEPS(),DataTimeSteps,DataTimeStepsKeyLength);
+        outputInfoPort1->Set(FilterInformation::DATA_TIME_STEPS(),DataTimeSteps,DataTimeStepsKeyLength);
 
         // Debug
-        DISPLAY(TimeSteps,this->NumberOfFileSeries);
+        DISPLAY(DataTimeSteps,this->NumberOfFileSeries);
     }
 
     // 2- TIME RANGE //
@@ -421,13 +421,13 @@ int Reader::RequestInformation(
     if(InitializeTimeRangeKey == true)
     {
         // Get TimeSteps
-        double *TimeSteps = outputInfoPort0->Get(FilterInformation::TIME_STEPS());
-        int TimeStepsKeyLength = outputInfoPort0->Length(FilterInformation::TIME_STEPS());
+        double *DataTimeSteps = outputInfoPort0->Get(FilterInformation::DATA_TIME_STEPS());
+        int DataTimeStepsKeyLength = outputInfoPort0->Length(FilterInformation::DATA_TIME_STEPS());
 
         // Create TimeRange values
         double TimeRange[2];
-        TimeRange[0] = TimeSteps[0];
-        TimeRange[1] = TimeSteps[TimeStepsKeyLength-1];
+        TimeRange[0] = DataTimeSteps[0];
+        TimeRange[1] = DataTimeSteps[DataTimeStepsKeyLength-1];
 
         // Add values to key in outputInfo
         outputInfoPort0->Set(FilterInformation::TIME_RANGE(),TimeRange,2);
@@ -497,22 +497,22 @@ int Reader::RequestData(
         return 0;
     }
 
-    // Time Steps
-    double *TimeSteps = outputInfoPort0->Get(FilterInformation::TIME_STEPS());
-    unsigned int TimeStepsLength = outputInfoPort0->Length(FilterInformation::TIME_STEPS());
+    // Data Time Steps
+    double *DataTimeSteps = outputInfoPort0->Get(FilterInformation::DATA_TIME_STEPS());
+    unsigned int DataTimeStepsLength = outputInfoPort0->Length(FilterInformation::DATA_TIME_STEPS());
 
-    // Check Time Steps
-    if(TimeSteps == NULL)
+    // Check Data Time Steps
+    if(DataTimeSteps == NULL)
     {
-        ERROR(<< "TimeSteps is NULL.");
-        vtkErrorMacro("TimeSteps is NULL.");
+        ERROR(<< "DataTimeSteps is NULL.");
+        vtkErrorMacro("DataTimeSteps is NULL.");
         return 0;
     }
 
-    if(TimeStepsLength < 1)
+    if(DataTimeStepsLength < 1)
     {
-        ERROR(<< "TimeStepsLength is zero.");
-        vtkErrorMacro("TimeStepsLength is zero.");
+        ERROR(<< "DataTimeStepsLength is zero.");
+        vtkErrorMacro("DataTimeStepsLength is zero.");
         return 0;
     }
 
@@ -549,17 +549,17 @@ int Reader::RequestData(
     // Read Data //
 
     // Iterate over files
-    for(unsigned int UpdateTimeStepsIterator=0;
-            UpdateTimeStepsIterator<UpdateTimeStepsLength;
+    for(unsigned int UpdateTimeStepsIterator = 0;
+            UpdateTimeStepsIterator < UpdateTimeStepsLength;
             UpdateTimeStepsIterator++)
     {
         // Index of Updated Time Step
         unsigned int FileIndex;
         bool UniqueIndexFound = this->FindIndexInVectorArray(
-                TimeSteps,
-                TimeStepsLength,
+                DataTimeSteps,
+                DataTimeStepsLength,
                 UpdateTimeSteps[UpdateTimeStepsIterator],
-                FileIndex);
+                FileIndex);                // Output
 
         // Check if unique index is found
         if(UniqueIndexFound == false)
@@ -611,7 +611,7 @@ int Reader::RequestData(
     // outputPort1 =  // TODO
 
     // Debug //
-    DISPLAY(TimeSteps,TimeStepsLength);
+    DISPLAY(DataTimeSteps,DataTimeStepsLength);
     DISPLAY(UpdateTimeSteps,UpdateTimeStepsLength);
     DEBUG(<< "Success");
 
