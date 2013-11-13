@@ -358,11 +358,11 @@ int Reader::RequestInformation(
     // Initialize DataTimeSteps Key
     if(InitializeDataTimeStepsKey == true)
     {
-        // DataTimeSteps Key Length
-        int DataTimeStepsKeyLength = this->NumberOfFileSeries;
+        // DataTimeSteps Length
+        int DataTimeStepsLength = this->NumberOfFileSeries;
 
         // DataTimeSteps Values
-        double DataTimeSteps[DataTimeStepsKeyLength];
+        double DataTimeSteps[DataTimeStepsLength];
 
         // Check if files have default data time steps
         bool DataTimeStepsAvailable = this->GetFilesTimeSteps();
@@ -370,7 +370,7 @@ int Reader::RequestInformation(
         if(DataTimeStepsAvailable == true)
         {
             // Use default time steps in files
-            for(unsigned int i=0; static_cast<int>(i)<DataTimeStepsKeyLength; i++)
+            for(unsigned int i=0; static_cast<int>(i)<DataTimeStepsLength; i++)
             {
                 DataTimeSteps[i] = this->FileTimeSteps[i];
             }
@@ -378,63 +378,63 @@ int Reader::RequestInformation(
         else
         {
             // Use file index for time steps
-            for(unsigned int i=0; static_cast<int>(i)<DataTimeStepsKeyLength; i++)
+            for(unsigned int i=0; static_cast<int>(i)<DataTimeStepsLength; i++)
             {
                 DataTimeSteps[i] = double(i);
             }
         }
 
         // Add values to key in outputInfo
-        outputInfoPort0->Set(FilterInformation::DATA_TIME_STEPS(),DataTimeSteps,DataTimeStepsKeyLength);
-        outputInfoPort1->Set(FilterInformation::DATA_TIME_STEPS(),DataTimeSteps,DataTimeStepsKeyLength);
+        outputInfoPort0->Set(FilterInformation::DATA_TIME_STEPS(),DataTimeSteps,DataTimeStepsLength);
+        outputInfoPort1->Set(FilterInformation::DATA_TIME_STEPS(),DataTimeSteps,DataTimeStepsLength);
 
         // Debug
         DISPLAY(DataTimeSteps,this->NumberOfFileSeries);
     }
 
-    // 2- TIME RANGE //
+    // 2- DATA TIME RANGE //
 
     // Check if Key exists
-    bool InitializeTimeRangeKey = false;
+    bool InitializeDataTimeRangeKey = false;
 
     // Check if key is included in outputInfo
-    if(!outputInfoPort0->Has(FilterInformation::TIME_RANGE()))
+    if(!outputInfoPort0->Has(FilterInformation::DATA_TIME_RANGE()))
     {
-        InitializeTimeRangeKey = true;
+        InitializeDataTimeRangeKey = true;
     }
     else
     {
         // Check if key length is correct
-        if(outputInfoPort0->Length(FilterInformation::TIME_RANGE()) != 2)
+        if(outputInfoPort0->Length(FilterInformation::DATA_TIME_RANGE()) != 2)
         {
-            InitializeTimeRangeKey = true;
+            InitializeDataTimeRangeKey = true;
         }
 
         // Check if key values are empty
-        if(outputInfoPort0->Get(FilterInformation::TIME_RANGE()) == NULL)
+        if(outputInfoPort0->Get(FilterInformation::DATA_TIME_RANGE()) == NULL)
         {
-            InitializeTimeRangeKey = true;
+            InitializeDataTimeRangeKey = true;
         }
     }
 
-    // Initialize TimeRange Key
-    if(InitializeTimeRangeKey == true)
+    // Initialize DataTimeRange Key
+    if(InitializeDataTimeRangeKey == true)
     {
         // Get TimeSteps
         double *DataTimeSteps = outputInfoPort0->Get(FilterInformation::DATA_TIME_STEPS());
-        int DataTimeStepsKeyLength = outputInfoPort0->Length(FilterInformation::DATA_TIME_STEPS());
+        int DataTimeStepsLength = outputInfoPort0->Length(FilterInformation::DATA_TIME_STEPS());
 
         // Create TimeRange values
-        double TimeRange[2];
-        TimeRange[0] = DataTimeSteps[0];
-        TimeRange[1] = DataTimeSteps[DataTimeStepsKeyLength-1];
+        double DataTimeRange[2];
+        DataTimeRange[0] = DataTimeSteps[0];
+        DataTimeRange[1] = DataTimeSteps[DataTimeStepsLength-1];
 
         // Add values to key in outputInfo
-        outputInfoPort0->Set(FilterInformation::TIME_RANGE(),TimeRange,2);
-        outputInfoPort1->Set(FilterInformation::TIME_RANGE(),TimeRange,2);
+        outputInfoPort0->Set(FilterInformation::DATA_TIME_RANGE(),DataTimeRange,2);
+        outputInfoPort1->Set(FilterInformation::DATA_TIME_RANGE(),DataTimeRange,2);
 
         // Debug
-        DISPLAY(TimeRange,2);
+        DISPLAY(DataTimeRange,2);
     }
 
     // Debug //
@@ -548,7 +548,7 @@ int Reader::RequestData(
 
     // Read Data //
 
-    // Iterate over files
+    // Iterate over Update time steps
     for(unsigned int UpdateTimeStepsIterator = 0;
             UpdateTimeStepsIterator < UpdateTimeStepsLength;
             UpdateTimeStepsIterator++)
@@ -609,6 +609,17 @@ int Reader::RequestData(
     // vtkDataSet *outputPort1 = vtkDataSet::SafeDownCast(outputInfoPort1->Get(vtkDataObject::DATA_OBJECT()));
 
     // outputPort1 =  // TODO
+
+    // Set Output TIME STEPS //
+
+    // Put UpdateTimeSteps to OutputUpdateTimeSteps
+    double *OutputTimeSteps = UpdateTimeSteps;
+    unsigned int OutputTimeStepsLength = UpdateTimeStepsLength;
+    outputInfoPort0->Set(FilterInformation::TIME_STEPS(),OutputTimeSteps,OutputTimeStepsLength);
+
+    // Debug
+    DISPLAY(OutputTimeSteps,OutputTimeStepsLength);
+
 
     // Debug //
     DISPLAY(DataTimeSteps,DataTimeStepsLength);

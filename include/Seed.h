@@ -172,6 +172,9 @@ class Seed : public vtkDataSetAlgorithm, public BaseFilter
         unsigned int Dimension;
         SearchModeType SearchMode;
 
+        // Interal Member data
+        double ProcessedTimeStep;
+
     private:
         Seed(const Seed & rhs);
         void operator=(const Seed & rhs);

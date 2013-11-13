@@ -755,6 +755,8 @@ int Seed::RequestData(
     // Output (StructuredPoints)
     vtkSmartPointer<vtkStructuredPoints> StructuredPointsOutput = vtkSmartPointer<vtkStructuredPoints>::New();
 
+    // Computation //
+
     // Set geometry of output grid
     this->SetOutputGridGeometry(StructuredPointsOutput);
 
@@ -774,6 +776,15 @@ int Seed::RequestData(
     // Convert StructuredPoints output to StructuredGrid output
     Seed::ConvertStructuredPointsToStructuredGrid(StructuredPointsOutput,output);
 
+    // Set Output Time Steps
+    double *InputTimeSteps = inputInfo->Get(FilterInformation::TIME_STEPS());
+    if(!InputTimeSteps)
+    {
+        double OutputTimeSteps[1] = {InputTimeSteps[0]};
+        outputInfo->Set(FilterInformation::TIME_STEPS(),OutputTimeSteps,1);
+    }
+
+    // Debug
     if(output->GetNumberOfPoints() > 0)
     {
         DEBUG(<< "Success");
