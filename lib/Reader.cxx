@@ -84,7 +84,7 @@ Reader::Reader()
     this->FileSeriesBaseName  = NULL;
     this->FileExtention       = NULL;
     this->FullFileNames       = NULL;
-    this->FileTimeSteps       = NULL;
+    this->DataTimeSteps       = NULL;
 
     // Pipeline
     this->SetNumberOfInputPorts(0);
@@ -111,12 +111,12 @@ Reader::~Reader()
     }
     this->FullFileNames = NULL;
 
-    // FileTimeSteps
-    if(this->FileTimeSteps != NULL)
+    // DataTimeSteps
+    if(this->DataTimeSteps != NULL)
     {
-        delete [] this->FileTimeSteps;
+        delete [] this->DataTimeSteps;
     }
-    this->FileTimeSteps = NULL;
+    this->DataTimeSteps = NULL;
 }
 
 // ==========
@@ -372,15 +372,19 @@ int Reader::RequestInformation(
             // Use default time steps in files
             for(unsigned int i=0; static_cast<int>(i)<DataTimeStepsLength; i++)
             {
-                DataTimeSteps[i] = this->FileTimeSteps[i];
+                DataTimeSteps[i] = this->DataTimeSteps[i];
             }
         }
         else
         {
-            // Use file index for time steps
+            // Use file index for default data time steps
             for(unsigned int i=0; static_cast<int>(i)<DataTimeStepsLength; i++)
             {
+                // Use file index
                 DataTimeSteps[i] = double(i);
+
+                // Write to member data
+                this->DataTimeSteps[i] = DataTimeSteps[i];
             }
         }
 
@@ -389,7 +393,7 @@ int Reader::RequestInformation(
         outputInfoPort1->Set(FilterInformation::DATA_TIME_STEPS(),DataTimeSteps,DataTimeStepsLength);
 
         // Debug
-        DISPLAY(DataTimeSteps,this->NumberOfFileSeries);
+        DISPLAY(DataTimeSteps,DataTimeStepsLength);
     }
 
     // 2- DATA TIME RANGE //
@@ -436,6 +440,46 @@ int Reader::RequestInformation(
         // Debug
         DISPLAY(DataTimeRange,2);
     }
+
+    // 3- Update TimeSteps //
+    double *UpdateTimeSteps = outputInfoPort0->Get(FilterInformation::UPDATE_TIME_STEPS);
+    unsigned int UpdateTimeStepsLength = outputInfoPort0->Length(FilterInformation::UPDATE_TIME_STEPS);
+
+    // Check Update TimeSteps
+    if(UpdateTimeSteps == NULL)
+    {
+        ERROR(<< "UpdateTimeSteps is NULL.");
+        vtkErrorMacro("UpdateTimeSteps is NULL.");
+        return 1;
+    }
+
+    if(UpdateTimeStepsLength < 1)
+    {
+        ERROR(<< "UpdateTimeSteps length is zero.");
+        vtkErrorMacro("UpdateTimeSteps length is zero.");
+        return 1;
+    }
+
+    // Declare OutputTimeSteps as a vector
+    std::vector<double> OutputTimeStepsVector;
+
+    bool OutputTimeStepsStatus = FindOutputTimeSteps(
+            DataTimeSteps,
+            DataTimeStepsLength,
+            UpdateTimeSteps,
+            UpdateTimeStepsLength,
+            this->OutputTimeSteps);
+
+    // Check OutputTimeSteps Status
+    if(OutputTimeStepsStatus == false)
+    {
+        ERROR(<< "Finding OutputTimeSteps was not successfull.");
+        vtkErrorMacro("Finding OutputTimeSteps was not successfull.");
+        return 0;
+    }
+
+    // Set Output TimeSteps
+    outputInfoPort0->Set(FilterInformation::TIME_STEPS,&this->OutputTimeSteps[0],this->OutputTimeSteps.size());
 
     // Debug //
     DEBUG(<< "Success");
@@ -612,14 +656,13 @@ int Reader::RequestData(
 
     // Set Output TIME STEPS //
 
-    // Put UpdateTimeSteps to OutputUpdateTimeSteps
+    // Put UpdateTimeSteps to OutputTimeSteps
     double *OutputTimeSteps = UpdateTimeSteps;
     unsigned int OutputTimeStepsLength = UpdateTimeStepsLength;
     outputInfoPort0->Set(FilterInformation::TIME_STEPS(),OutputTimeSteps,OutputTimeStepsLength);
 
     // Debug
     DISPLAY(OutputTimeSteps,OutputTimeStepsLength);
-
 
     // Debug //
     DISPLAY(DataTimeSteps,DataTimeStepsLength);
@@ -736,12 +779,12 @@ bool Reader::GetFilesTimeSteps()
         double FileTime = atof(FileTimeAsString.c_str());
 
         // Store in Time Array
-        if(this->FileTimeSteps == NULL)
+        if(this->DataTimeSteps == NULL)
         {
-            this->FileTimeSteps = new double[this->NumberOfFileSeries];
+            this->DataTimeSteps = new double[this->NumberOfFileSeries];
         }
 
-        this->FileTimeSteps[i] = FileTime;
+        this->DataTimeSteps[i] = FileTime;
 
         // Close File
         File.close();
@@ -791,6 +834,20 @@ bool Reader::FindIndexInVectorArray(
     {
         return true;
     }
+}
+
+// =====================
+// Find Output TimeSteps
+// =====================
+
+bool Reader::FindOutputTimeSteps(
+        double *DataTimeSteps,
+        unsigned int DataTimeStepsLength,
+        double *UpdateTimeSteps,
+        unsigned int UpdateTimeStepsLength,
+        std::vector<double> OutputTmeStepsVector)
+{
+
 }
 
 // ==============

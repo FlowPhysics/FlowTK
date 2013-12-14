@@ -34,6 +34,7 @@
 #include <BaseFilter.h>
 #include <vtkSmartPointer.h>
 #include <map>
+#include <vector>
 
 // Incomplete Types
 class vtkDataObject;
@@ -121,6 +122,12 @@ class Reader : public vtkMultiBlockDataSetAlgorithm, public BaseFilter
                 unsigned int VectorArrayLength,
                 double ArrayMember,
                 unsigned int &MemberIndex);
+        bool FindOutputTimeSteps(
+                double *DataTimeSteps,
+                unsigned int DataTimeStepsLength,
+                double *UpdateTimeSteps,
+                unsigned int UpdateTimeStepsLength,
+                std::vector<double> OutputTimeStepsVector);
 
         // Interface Member Data
         unsigned int NumberOfFileSeries;
@@ -133,7 +140,8 @@ class Reader : public vtkMultiBlockDataSetAlgorithm, public BaseFilter
         // Internal Member Data
         FilterInformation *ReaderInformation;
         char **FullFileNames;
-        double *FileTimeSteps;
+        double *DataTimeSteps;
+        std::vector<double> OutputTimeSteps;
 
     private:
         Reader(const Reader &);
