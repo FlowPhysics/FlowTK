@@ -80,6 +80,7 @@ class Reader : public vtkMultiBlockDataSetAlgorithm, public BaseFilter
 
         // Old Pipeline Accessors
         virtual vtkMultiBlockDataSet * GetOutput();
+
         virtual vtkMultiBlockDataSet * GetOutput(int port);
         virtual void SetOutput(vtkDataObject *OutputDataObject);
         virtual void SetOutput(int port, vtkDataObject *OutputDataObject);
@@ -90,6 +91,7 @@ class Reader : public vtkMultiBlockDataSetAlgorithm, public BaseFilter
 
         // Pipeline Executives
         virtual int FillInputPortInformation(int port,vtkInformation *info);
+
         virtual int FillOutputPortInformation(int port,vtkInformation *info);
         
         virtual int RequestDataObject(
@@ -114,20 +116,32 @@ class Reader : public vtkMultiBlockDataSetAlgorithm, public BaseFilter
 
         // Member Methods
         int CreateFullFileNames();
-        bool GetFilesTimeSteps();
+
+        void FindDataTimeSteps();
+
+        bool FindFilesTimeSteps();
+
         vtkSmartPointer<vtkDataObject> GenericReader(
                 const char * FullFileName);
-        bool FindIndexInVectorArray(
+
+        bool FindMemberIndexInArray(
+                double *Array,
+                unsigned int ArrayLength,
+                double InquiryValue,
+                unsigned int &MemberIndex);  // Ouput
+
+        void SortVectorArray(
                 double *VectorArray,
                 unsigned int VectorArrayLength,
-                double ArrayMember,
-                unsigned int &MemberIndex);
+                double *SortedVectorArray);  // Output
+
         bool FindOutputTimeSteps(
                 double *DataTimeSteps,
                 unsigned int DataTimeStepsLength,
                 double *UpdateTimeSteps,
                 unsigned int UpdateTimeStepsLength,
-                std::vector<double> OutputTimeStepsVector);
+                std::vector<unsigned int> & OutputTimeStepsIndices,  // Output
+                std::vector<double> & OutputTimeSteps);  // Output
 
         // Interface Member Data
         unsigned int NumberOfFileSeries;
@@ -141,7 +155,8 @@ class Reader : public vtkMultiBlockDataSetAlgorithm, public BaseFilter
         FilterInformation *ReaderInformation;
         char **FullFileNames;
         double *DataTimeSteps;
-        std::vector<double> OutputTimeSteps;
+        std::vector<double> OutputTimeStepsVector;
+        std::vector<unsigned int> OutputTimeStepsIndicesVector;
 
     private:
         Reader(const Reader &);

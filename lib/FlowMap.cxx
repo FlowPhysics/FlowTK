@@ -423,60 +423,60 @@ int FlowMap::RequestInformation(
         return 0;
     }
 
-    // 1- Time Steps //
+    // 1- Data Time Steps //
     
     // Check if key exists in inputInfo
-    if(!inputInfo->Has(FilterInformation::TIME_STEPS()))
+    if(!inputInfo->Has(FilterInformation::DATA_TIME_STEPS()))
     {
-        ERROR(<< "inputInfo does not have TIME_STEPS key.");
-        vtkErrorMacro("inputInfo does not have TIME_STEPS key.");
+        ERROR(<< "inputInfo does not have DATA_TIME_STEPS key.");
+        vtkErrorMacro("inputInfo does not have DATA_TIME_STEPS key.");
         return 0;
     }
 
-    // Get TimeSteps
-    unsigned int TimeStepsLength = inputInfo->Length(FilterInformation::TIME_STEPS());
-    double *TimeSteps = inputInfo->Get(FilterInformation::TIME_STEPS());
+    // Get InputDataTimeSteps
+    unsigned int InputDataTimeStepsLength = inputInfo->Length(FilterInformation::DATA_TIME_STEPS());
+    double *InputDataTimeSteps = inputInfo->Get(FilterInformation::DATA_TIME_STEPS());
 
     // Check TimeSteps
-    if(TimeStepsLength < 1)
+    if(InputDataTimeStepsLength < 1)
     {
-        ERROR(<< "TimeStepsLength is zero.");
-        vtkErrorMacro("TimeStepsLength is zero.");
+        ERROR(<< "InputDataTimeStepsLength is zero.");
+        vtkErrorMacro("InputDataTimeStepsLength is zero.");
         return 0;
     }
     
-    if(TimeSteps == NULL)
+    if(InputDataTimeSteps == NULL)
     {
-        ERROR(<< "TimeSteps is NULL.");
-        vtkErrorMacro("TimeSteps is NULL");
+        ERROR(<< "InputDataTimeSteps is NULL.");
+        vtkErrorMacro("InputDataTimeSteps is NULL");
         return 0;
     }
 
     // Set to Output Info
-    outputInfo->Set(FilterInformation::TIME_STEPS(),TimeSteps,TimeStepsLength);
+    outputInfo->Set(FilterInformation::DATA_TIME_STEPS(),InputDataTimeSteps,InputDataTimeStepsLength);
 
-    // 2- Time Range //
+    // 2- Data Time Range //
 
     // Check if key exists in inputInfo
-    if(!inputInfo->Has(FilterInformation::TIME_RANGE()))
+    if(!inputInfo->Has(FilterInformation::DATA_TIME_RANGE()))
     {
-        ERROR(<< "inputInfo does not have TIME_RANGE key.");
-        vtkErrorMacro("inputInfo does not have TIME");
+        ERROR(<< "inputInfo does not have DATA_TIME_RANGE key.");
+        vtkErrorMacro("inputInfo does not have DATA_TIME_RANGE key.");
         return 0;
     }
 
-    double *TimeRange = inputInfo->Get(FilterInformation::TIME_RANGE());
+    double *DataTimeRange = inputInfo->Get(FilterInformation::DATA_TIME_RANGE());
 
     // Check Time Range
-    if(TimeRange == NULL)
+    if(DataTimeRange == NULL)
     {
-        ERROR(<< "TimeRange is NULL.");
-        vtkErrorMacro("TimeRange is NULL.");
+        ERROR(<< "DataTimeRange is NULL.");
+        vtkErrorMacro("DataTimeRange is NULL.");
         return 0;
     }
 
     // Set to Output Info
-    outputInfo->Set(FilterInformation::TIME_RANGE(),TimeRange,2);
+    outputInfo->Set(FilterInformation::DATA_TIME_RANGE(),DataTimeRange,2);
     
     DEBUG(<< "Success");
     return 1;
@@ -1176,7 +1176,13 @@ unsigned int FlowMap::RequiredTimeFrames(IntegratorModeType ModeType)
 void FlowMap::InitializeTimeIndices(vtkInformation *inputInfo0)
 {
     // Get Data Time Range
-    double *DataTimeRange = inputInfo0->Get(FilterInformation::TIME_RANGE());
+    if(!inputInfo0->Has(FilterInformation::DATA_TIME_RANGE()))
+    {
+        ERROR(<< "InputInfo does not has DATA_TIME_RANGE key.");
+        vtkErrorMacro("InputInfo does not have DATA_TIME_RANGE key.");
+    }
+
+    double *DataTimeRange = inputInfo0->Get(FilterInformation::DATA_TIME_RANGE());
     double DataTimeRangeInterval = DataTimeRange[1] - DataTimeRange[0];
 
     // Check Integration Duration

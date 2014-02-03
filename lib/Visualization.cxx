@@ -35,7 +35,7 @@
 #include <vtkInformationKey.h>
 #include <FilterInformation.h>
 
-// String
+// STL
 #include <cstring>
 
 // General
@@ -223,50 +223,48 @@ int Visualization::RequestInformation(
     // Output
     vtkInformation *outputInfo = outputVector->GetInformationObject(0);
 
-    // 1- TIME STEPS //
+    // 1- Data Time Steps //
 
     // Get Time Steps from Input 
+    vtkInformationDoubleVectorKey *InputDataTimeStepsKey = 
+        this->VisualizationInformation->GetDoubleVectorKey(inputInfo,FilterInformation::DATA_TIME_STEPS());
 
-    // FilterInformation VisualizationInformation;
-    vtkInformationDoubleVectorKey *InputTimeStepsKey = 
-        this->VisualizationInformation->GetDoubleVectorKey(inputInfo,FilterInformation::TIME_STEPS());
+    double *InputDataTimeSteps = inputInfo->Get(InputDataTimeStepsKey);
+    unsigned int InputDataTimeStepsLength = inputInfo->Length(InputDataTimeStepsKey);
 
-    double *TimeSteps = inputInfo->Get(InputTimeStepsKey);
-    unsigned int TimeStepsLength = inputInfo->Length(InputTimeStepsKey);
-
-    if(TimeStepsLength < 1)
+    if(InputDataTimeStepsLength < 1)
     {
-        vtkErrorMacro("TimeStepsLength is zero");
+        vtkErrorMacro("InputData]TimeStepsLength is zero");
         return 0;
     }
 
-    if(TimeSteps == NULL)
+    if(InputDataTimeSteps == NULL)
     {
-        DEBUG(<< "TIME_STEPS is NULL.")
+        DEBUG(<< "InputDataTimeSteps is NULL.")
     }
 
-    DISPLAY(TimeSteps,TimeStepsLength)
+    DISPLAY(InputDataTimeSteps,InputDataTimeStepsLength)
 
     // Set Time Steps to Output
-    outputInfo->Set(FilterInformation::TIME_STEPS(),TimeSteps,TimeStepsLength);
+    outputInfo->Set(FilterInformation::DATA_TIME_STEPS(),InputDataTimeSteps,InputDataTimeStepsLength);
 
-    // 2- TIME RANGE //
+    // 2- Data Time Range //
 
     // Get Time Range from Input
-    vtkInformationDoubleVectorKey *InputTimeRangeKey = 
-        this->VisualizationInformation->GetDoubleVectorKey(inputInfo,FilterInformation::TIME_RANGE());
-    double *TimeRange = inputInfo->Get(InputTimeRangeKey);
+    vtkInformationDoubleVectorKey *InputDataTimeRangeKey = 
+        this->VisualizationInformation->GetDoubleVectorKey(inputInfo,FilterInformation::DATA_TIME_RANGE());
+    double *InputDataTimeRange = inputInfo->Get(InputDataTimeRangeKey);
 
-    if(TimeRange == NULL)
+    if(InputDataTimeRange == NULL)
     {
-        vtkErrorMacro("TimeRange is NULL");
+        vtkErrorMacro("InputDataTimeRange is NULL");
         return 0;
     }
 
-    DISPLAY(TimeRange,2)
+    DISPLAY(InputDataTimeRange,2)
 
     // Set Time Range to Output
-    outputInfo->Set(FilterInformation::TIME_RANGE(),TimeRange,2);
+    outputInfo->Set(FilterInformation::DATA_TIME_RANGE(),InputDataTimeRange,2);
 
     DEBUG(<< "Success");
 

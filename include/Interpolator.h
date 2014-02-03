@@ -146,6 +146,7 @@ class Interpolator : public vtkDataSetAlgorithm, public BaseFilter
         void ConvertIntervalsToIndices(
                 unsigned int *Intervals,
                 unsigned int NumberOfIntervals,
+                unsigned int DataTimeStepsLength,
                 vtkstd::vector<unsigned int> &Indices);      // Output
 
         void ConvertIndicesToTimeSteps(

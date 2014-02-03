@@ -46,13 +46,14 @@
 #include <vtkDataSet.h>
 #include <vtkMultiBlockDataSet.h>
 
-// For Strings
-#include <sstream>  // stringstream
-#include <string>   // string
-#include <fstream>  // ifstream
-#include <locale>   // isprint
-#include <limits>   // numeric_limits
-#include <map>      // map
+// STL
+#include <sstream>   // stringstream
+#include <string>    // string
+#include <fstream>   // ifstream
+#include <locale>    // isprint
+#include <limits>    // numeric_limits
+#include <map>       // map
+#include <algorithm> // sort
 
 // For DEBUG
 #include <vtkInformationRequestKey.h>
@@ -62,7 +63,7 @@
 // ======
 
 // Time Snap precision
-#define EPSILON 1e-4
+#define EPSILON 1e-6
 
 vtkStandardNewMacro(Reader);
 vtkCxxRevisionMacro(Reader,"$Revision 1.0$");
@@ -361,39 +362,15 @@ int Reader::RequestInformation(
         // DataTimeSteps Length
         int DataTimeStepsLength = this->NumberOfFileSeries;
 
-        // DataTimeSteps Values
-        double DataTimeSteps[DataTimeStepsLength];
-
-        // Check if files have default data time steps
-        bool DataTimeStepsAvailable = this->GetFilesTimeSteps();
-
-        if(DataTimeStepsAvailable == true)
-        {
-            // Use default time steps in files
-            for(unsigned int i=0; static_cast<int>(i)<DataTimeStepsLength; i++)
-            {
-                DataTimeSteps[i] = this->DataTimeSteps[i];
-            }
-        }
-        else
-        {
-            // Use file index for default data time steps
-            for(unsigned int i=0; static_cast<int>(i)<DataTimeStepsLength; i++)
-            {
-                // Use file index
-                DataTimeSteps[i] = double(i);
-
-                // Write to member data
-                this->DataTimeSteps[i] = DataTimeSteps[i];
-            }
-        }
+        // DataTimeSteps Values (stored in member data)
+        this->FindDataTimeSteps();
 
         // Add values to key in outputInfo
-        outputInfoPort0->Set(FilterInformation::DATA_TIME_STEPS(),DataTimeSteps,DataTimeStepsLength);
-        outputInfoPort1->Set(FilterInformation::DATA_TIME_STEPS(),DataTimeSteps,DataTimeStepsLength);
+        outputInfoPort0->Set(FilterInformation::DATA_TIME_STEPS(),this->DataTimeSteps,DataTimeStepsLength);
+        outputInfoPort1->Set(FilterInformation::DATA_TIME_STEPS(),this->DataTimeSteps,DataTimeStepsLength);
 
         // Debug
-        DISPLAY(DataTimeSteps,DataTimeStepsLength);
+        DISPLAY(this->DataTimeSteps,DataTimeStepsLength);
     }
 
     // 2- DATA TIME RANGE //
@@ -421,12 +398,16 @@ int Reader::RequestInformation(
         }
     }
 
+    // Declare DataTimeSteps
+    double *DataTimeSteps;
+    unsigned int DataTimeStepsLength;
+
     // Initialize DataTimeRange Key
     if(InitializeDataTimeRangeKey == true)
     {
         // Get TimeSteps
-        double *DataTimeSteps = outputInfoPort0->Get(FilterInformation::DATA_TIME_STEPS());
-        int DataTimeStepsLength = outputInfoPort0->Length(FilterInformation::DATA_TIME_STEPS());
+        DataTimeSteps = outputInfoPort0->Get(FilterInformation::DATA_TIME_STEPS());
+        DataTimeStepsLength = outputInfoPort0->Length(FilterInformation::DATA_TIME_STEPS());
 
         // Create TimeRange values
         double DataTimeRange[2];
@@ -442,8 +423,9 @@ int Reader::RequestInformation(
     }
 
     // 3- Update TimeSteps //
-    double *UpdateTimeSteps = outputInfoPort0->Get(FilterInformation::UPDATE_TIME_STEPS);
-    unsigned int UpdateTimeStepsLength = outputInfoPort0->Length(FilterInformation::UPDATE_TIME_STEPS);
+
+    double *UpdateTimeSteps = outputInfoPort0->Get(FilterInformation::UPDATE_TIME_STEPS());
+    unsigned int UpdateTimeStepsLength = outputInfoPort0->Length(FilterInformation::UPDATE_TIME_STEPS());
 
     // Check Update TimeSteps
     if(UpdateTimeSteps == NULL)
@@ -460,15 +442,13 @@ int Reader::RequestInformation(
         return 1;
     }
 
-    // Declare OutputTimeSteps as a vector
-    std::vector<double> OutputTimeStepsVector;
-
     bool OutputTimeStepsStatus = FindOutputTimeSteps(
             DataTimeSteps,
             DataTimeStepsLength,
             UpdateTimeSteps,
             UpdateTimeStepsLength,
-            this->OutputTimeSteps);
+            this->OutputTimeStepsIndicesVector,  // Output
+            this->OutputTimeStepsVector);        // Output
 
     // Check OutputTimeSteps Status
     if(OutputTimeStepsStatus == false)
@@ -479,7 +459,7 @@ int Reader::RequestInformation(
     }
 
     // Set Output TimeSteps
-    outputInfoPort0->Set(FilterInformation::TIME_STEPS,&this->OutputTimeSteps[0],this->OutputTimeSteps.size());
+    outputInfoPort0->Set(FilterInformation::TIME_STEPS(),&this->OutputTimeStepsVector[0],this->OutputTimeStepsVector.size());
 
     // Debug //
     DEBUG(<< "Success");
@@ -533,11 +513,11 @@ int Reader::RequestData(
         return 0;
     }
 
-    // Check outputInfo of port 0 has TIME_STEPS key
-    if(!outputInfoPort0->Has(FilterInformation::TIME_STEPS()))
+    // Check outputInfo of port 0 has DATA_TIME_STEPS key
+    if(!outputInfoPort0->Has(FilterInformation::DATA_TIME_STEPS()))
     {
-        ERROR(<< "outputInfo of port 0 does not have TIME_STEPS key.");
-        vtkErrorMacro("outputInfo of port 0 does not have TIME_STEPS key.");
+        ERROR(<< "outputInfo of port 0 does not have DATA_TIME_STEPS key.");
+        vtkErrorMacro("outputInfo of port 0 does not have DATA_TIME_STEPS key.");
         return 0;
     }
 
@@ -572,6 +552,8 @@ int Reader::RequestData(
     double *UpdateTimeSteps = outputInfoPort0->Get(FilterInformation::UPDATE_TIME_STEPS());
     unsigned int UpdateTimeStepsLength = outputInfoPort0->Length(FilterInformation::UPDATE_TIME_STEPS());
 
+    DISPLAY(UpdateTimeSteps,UpdateTimeStepsLength);
+
     // Check Update Time Steps
     if(UpdateTimeSteps == NULL)
     {
@@ -592,26 +574,33 @@ int Reader::RequestData(
 
     // Read Data //
 
+    // Prepare TimeStep Indices to read
+    // Note: OutputTimeSteps has already been calculated in RequestInfirmation.
+    if(this->OutputTimeStepsIndicesVector.size() != UpdateTimeStepsLength)
+    {
+        bool OutputTimeStepStatus = this->FindOutputTimeSteps(
+                DataTimeSteps,
+                DataTimeStepsLength,
+                UpdateTimeSteps,
+                UpdateTimeStepsLength,
+                this->OutputTimeStepsIndicesVector,  // Output
+                this->OutputTimeStepsVector);       // Output
+
+        if(OutputTimeStepStatus == false)
+        {
+            ERROR(<< "Reader can not find update time steps.");
+            vtkErrorMacro("Reader can not find update time steps.");
+            return 0;
+        }
+    }
+
     // Iterate over Update time steps
     for(unsigned int UpdateTimeStepsIterator = 0;
             UpdateTimeStepsIterator < UpdateTimeStepsLength;
             UpdateTimeStepsIterator++)
     {
         // Index of Updated Time Step
-        unsigned int FileIndex;
-        bool UniqueIndexFound = this->FindIndexInVectorArray(
-                DataTimeSteps,
-                DataTimeStepsLength,
-                UpdateTimeSteps[UpdateTimeStepsIterator],
-                FileIndex);                // Output
-
-        // Check if unique index is found
-        if(UniqueIndexFound == false)
-        {
-            ERROR(<< "Unique index not found.");
-            vtkErrorMacro("Reader >> Unique index not found!");
-            return 0;
-        }
+        unsigned int FileIndex = this->OutputTimeStepsIndicesVector[UpdateTimeStepsIterator];
 
         // Generic Reader
         vtkSmartPointer<vtkDataObject> outputDataObject = this->GenericReader(this->FullFileNames[FileIndex]);
@@ -703,13 +692,48 @@ int Reader::CreateFullFileNames()
 }
 
 // ====================
-// Get Files Time Steps
+// Find Data Time Steps
 // ====================
 
 // Description
-// Returns false if time sterps are not found or not in valid format
+// Finds times steps in files. If no time steps found in file, uses file number integers
+// (as doubles) starting form 0.
 
-bool Reader::GetFilesTimeSteps()
+void Reader::FindDataTimeSteps()
+{
+    // Tries to find files time steps if available
+    bool TimeStepsFound = this->FindFilesTimeSteps();
+
+    if(TimeStepsFound == false)
+    {
+        WARNING(<< "Files do not appear to have time steps. Use file numbers instead.");
+
+        // Allocate DataTimeSteps
+        if(this->DataTimeSteps != NULL)
+        {
+            delete [] this->DataTimeSteps;
+        }
+        this->DataTimeSteps = new double[this->NumberOfFileSeries];
+
+        // Use file unmbers for DataTimeSteps
+        for(unsigned int FileIterator = 0; FileIterator < this->NumberOfFileSeries; FileIterator++)
+        {
+            // Use double type for time steps
+            // this->DataTimeSteps[FileIterator] = static_cast<double>(FileIterator);
+            this->DataTimeSteps[FileIterator] = double(FileIterator);
+        }
+    }
+}
+
+// =====================
+// Find Files Time Steps
+// =====================
+
+// Decription:
+// Find times steps in files. If time steps found, it stores them in DataTimeSteps
+// memeber data. If not found, returns false.
+
+bool Reader::FindFilesTimeSteps()
 {
     // Create Full File Names
     if(this->FullFileNames == NULL)
@@ -733,7 +757,6 @@ bool Reader::GetFilesTimeSteps()
         std::string Line = "";
         File.ignore(std::numeric_limits<std::streamsize>::max(),'\n');  // Skip first line till \n
         std::getline(File,Line);  // Read second line
-
 
         // Check if Time exists
         bool ValidTimeFormat = true;
@@ -781,24 +804,20 @@ bool Reader::GetFilesTimeSteps()
         // Store in Time Array
         if(this->DataTimeSteps == NULL)
         {
-            this->DataTimeSteps = new double[this->NumberOfFileSeries];
+            delete [] this->DataTimeSteps;
         }
-
+        this->DataTimeSteps = new double[this->NumberOfFileSeries];
         this->DataTimeSteps[i] = FileTime;
 
         // Close File
         File.close();
-
-        HERE
     }
-
-    HERE
 
     return true;
 }
 
 // ==========================
-// Find Index In Vector Array
+// Find Member Index In Array
 // ==========================
 
 // Description:
@@ -806,22 +825,22 @@ bool Reader::GetFilesTimeSteps()
 // If ArrayMember is not in range of array or not close to array members it
 // returns false, otherwise it returns true.
 
-bool Reader::FindIndexInVectorArray(
-        double * VectorArray,
-        unsigned int VectorArrayLength,
-        double ArrayMember,
+bool Reader::FindMemberIndexInArray(
+        double * Array,
+        unsigned int ArrayLength,
+        double InquiryValue,
         unsigned int &MemberIndex)
 {
     // Count How many index will be found
     unsigned int IndexFound = 0;
 
-    // Iterate over VectorArray
-    for(unsigned int i=0; i<VectorArrayLength; i++)
+    // Iterate over Array
+    for(unsigned int ArrayIterator = 0; ArrayIterator < ArrayLength; ArrayIterator++)
     {
-        if(abs(VectorArray[i]-ArrayMember) < EPSILON)
+        if(abs(Array[ArrayIterator]-InquiryValue) / (Array[ArrayIterator] + EPSILON) < EPSILON)
         {
             IndexFound++;
-            MemberIndex = i;
+            MemberIndex = ArrayIterator;
         }
     }
 
@@ -836,18 +855,85 @@ bool Reader::FindIndexInVectorArray(
     }
 }
 
-// =====================
-// Find Output TimeSteps
-// =====================
+// =================
+// Sort Vector Array
+// =================
+
+// Description:
+// Sorts double arrays using std::sort
+// Output is NOT overwritten onoriginal array. The purpose of this function is
+// to have a separate dcopy of sorted array using deep copy.
+
+void Reader::SortVectorArray(
+        double *VectorArray,
+        unsigned int VectorArrayLength,
+        double *SortedVectorArray)
+{
+    // Store VectorArray as vector container
+    std::vector<double> VectorArrayAsVector;
+    VectorArrayAsVector.assign(VectorArray,VectorArray+VectorArrayLength);
+
+    // Sort new array
+    std::sort(VectorArrayAsVector.begin(),VectorArrayAsVector.end());
+
+    // Deep Copy to output
+    for(unsigned int Iterator = 0; Iterator < VectorArrayLength; Iterator++)
+    {
+        SortedVectorArray[Iterator] = VectorArrayAsVector[Iterator];
+    }
+}
+
+// ======================
+// Find Output Time Steps
+// ======================
+
+// Description:
+// Find time steps that is needed to be read from original data.
+// It stores the output to member data of the Reader class. Outputs are:
+// If no index from DataTimeSteps found, it returns false.
 
 bool Reader::FindOutputTimeSteps(
         double *DataTimeSteps,
         unsigned int DataTimeStepsLength,
         double *UpdateTimeSteps,
         unsigned int UpdateTimeStepsLength,
-        std::vector<double> OutputTmeStepsVector)
+        std::vector<unsigned int> & OutputTimeStepsIndices,  // Output
+        std::vector<double> & OutputTimeSteps)      // Output
 {
+    // Clear OutputTimeSteps vector
+    this->OutputTimeStepsVector.clear();
+    this->OutputTimeStepsIndicesVector.clear();
 
+    // Sort UpdateTimeSteps
+    double SortedUpdateTimeSteps[UpdateTimeStepsLength];
+    this->SortVectorArray(UpdateTimeSteps,UpdateTimeStepsLength,SortedUpdateTimeSteps);
+
+    // Iterate over Update Time Steps
+    for(unsigned int UpdateTimeStepsIterator = 0;
+        UpdateTimeStepsIterator < UpdateTimeStepsLength;
+        UpdateTimeStepsIterator++)
+    {
+        // find output TimeSteps index
+        unsigned int OutputTimeStepIndex;
+        bool OutputTimeStepIndexStatus = this->FindMemberIndexInArray(
+                DataTimeSteps,
+                DataTimeStepsLength,
+                SortedUpdateTimeSteps[UpdateTimeStepsIterator],
+                OutputTimeStepIndex);
+
+        // check if the index not out of data bound
+        if(OutputTimeStepIndexStatus == false)
+        {
+            vtkErrorMacro("Can not find time step from data.");
+            return false;
+        }
+
+        // Add Index to Vector
+        OutputTimeStepsIndices.push_back(OutputTimeStepIndex);
+        OutputTimeSteps.push_back(DataTimeSteps[OutputTimeStepIndex]);
+    }
+
+    return true;
 }
 
 // ==============

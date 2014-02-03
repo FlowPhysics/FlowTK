@@ -44,7 +44,7 @@ int main(int argc,char *argv[])
     prototype->Delete();
 
     // Log //
-    BaseFilter::SetLogFileName("/home/sia/code/projvtk/Filter/Pipeline/build/log.txt");
+    BaseFilter::SetLogFileName("/home/sia/code/projvtk/Filter/FlowTK/build/log.txt");
     // BaseFilter::LoggerOn();
 
     // Reader //

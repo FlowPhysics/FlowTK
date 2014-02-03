@@ -151,7 +151,7 @@ class Seed : public vtkDataSetAlgorithm, public BaseFilter
         int FindIntersectionOfGrids(
                 vtkDataSet *DataGrid,
                 vtkDataSet *SeedGrid,
-                vtkIntArray *CellIDs);
+                vtkIntArray *CellIDs);  // Output
 
         void InitializeTracers(
                 vtkDataSet *DataGrid,

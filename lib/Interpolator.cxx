@@ -333,61 +333,61 @@ int Interpolator::RequestInformation(
     // Output
     vtkInformation *outputInfo = outputVector->GetInformationObject(0);
 
-    // 1- TIME STEPS //
+    // 1- DATA TIME STEPS //
     
     // Check if Key exists in inputInfo
-    if(!inputInfo->Has(FilterInformation::TIME_STEPS()))
+    if(!inputInfo->Has(FilterInformation::DATA_TIME_STEPS()))
     {
-        ERROR(<< "inputInfo does not have TIME_STEPS key.");
-        vtkErrorMacro("inputInfo does not have TIME_STEPS key.");
+        ERROR(<< "inputInfo does not have DATA_TIME_STEPS key.");
+        vtkErrorMacro("inputInfo does not have DATA_TIME_STEPS key.");
         return 1;
     }
 
-    // Get Time Steps from Input
-    unsigned int TimeStepsLength = inputInfo->Length(FilterInformation::TIME_STEPS());
-    double *TimeSteps = inputInfo->Get(FilterInformation::TIME_STEPS());
+    // Get Data Time Steps from Input
+    unsigned int DataTimeStepsLength = inputInfo->Length(FilterInformation::DATA_TIME_STEPS());
+    double *DataTimeSteps = inputInfo->Get(FilterInformation::DATA_TIME_STEPS());
 
     // Check Time Steps
-    if(TimeStepsLength < 1)
+    if(DataTimeStepsLength < 1)
     {
-        ERROR(<< "TimeStepsLength is zero.");
-        vtkErrorMacro("TimeStepsLength is zero.");
+        ERROR(<< "DataTimeSteps Length is zero.");
+        vtkErrorMacro("DataTimeSteps Length is zero.");
         return 0;
     }
     
-    if(TimeSteps == NULL)
+    if(DataTimeSteps == NULL)
     {
-        ERROR(<< "TimeSteps is NULL.");
-        vtkErrorMacro("TimeSteps is NULL.");
+        ERROR(<< "DataTimeSteps is NULL.");
+        vtkErrorMacro("DataTimeSteps is NULL.");
         return 0;
     }
 
     // Set Time Steps to Output
-    outputInfo->Set(FilterInformation::TIME_STEPS(),TimeSteps,TimeStepsLength);
+    outputInfo->Set(FilterInformation::DATA_TIME_STEPS(),DataTimeSteps,DataTimeStepsLength);
 
-    // 2- TIME RANGE //
+    // 2- DATA TIME RANGE //
 
     // Check if TimeRange key exists in inputInfo
-    if(!inputInfo->Has(FilterInformation::TIME_RANGE()))
+    if(!inputInfo->Has(FilterInformation::DATA_TIME_RANGE()))
     {
-        ERROR(<< "inputInfo does not have TimeRange key.");
-        vtkErrorMacro("inputInfo does not have TimeRange key.");
+        ERROR(<< "inputInfo does not have DataTimeRange key.");
+        vtkErrorMacro("inputInfo does not have DataTimeRange key.");
         return 0;
     }
 
-    // Get Time Range from Input
-    double *TimeRange = inputInfo->Get(FilterInformation::TIME_RANGE());
+    // Get Data Time Range from Input
+    double *DataTimeRange = inputInfo->Get(FilterInformation::DATA_TIME_RANGE());
 
     // Check TimeRange
-    if(TimeRange == NULL)
+    if(DataTimeRange == NULL)
     {
-        ERROR(<< "TimeRange is NULL.");
-        vtkErrorMacro("TimeRange is NULL.");
+        ERROR(<< "DataTimeRange is NULL.");
+        vtkErrorMacro("DataTimeRange is NULL.");
         return 0;
     }
 
-    // Set Time Range to Output
-    outputInfo->Set(FilterInformation::TIME_RANGE(),TimeRange,2);
+    // Set Data Time Range to Output
+    outputInfo->Set(FilterInformation::DATA_TIME_RANGE(),DataTimeRange,2);
 
     HERE
     this->Test();
@@ -508,7 +508,10 @@ int Interpolator::RequestUpdateExtent(
     this->ConvertIntervalsToIndices(
             RequestedDataTimeIntervals,
             RequestedDataTimeIntervalsLength,
+            InputDataTimeStepsLength,
             RequestedDataTimeStepIndices);        //Output
+
+    DISPLAY(RequestedDataTimeIntervals,RequestedDataTimeIntervalsLength);
     
     // Sort Indices vector
     vtkstd::sort(RequestedDataTimeStepIndices.begin(),RequestedDataTimeStepIndices.end());
@@ -609,6 +612,7 @@ bool Interpolator::FindRequestedDataTimeIntervals(
 void Interpolator::ConvertIntervalsToIndices(
         unsigned int *Intervals,
         unsigned int NumberOfIntervals,
+        unsigned int DataTimeStepsLength,
         vtkstd::vector<unsigned int> &Indices)     // Output
 {
     // Staked Indices vector
@@ -620,8 +624,11 @@ void Interpolator::ConvertIntervalsToIndices(
         // Add Left index of Interval
         StakedIndicesVector.push_back(Intervals[IntervalsIterator]);
 
-        // Add right index of Interval
-        StakedIndicesVector.push_back(Intervals[IntervalsIterator] + 1);
+        // Add right index of Interval, avoid right of end interval
+        if(Intervals[IntervalsIterator] + 1 < DataTimeStepsLength)
+        {
+            StakedIndicesVector.push_back(Intervals[IntervalsIterator] + 1);
+        }
     }
 
     // Remove (squeeze) repetitive indices
@@ -632,7 +639,7 @@ void Interpolator::ConvertIntervalsToIndices(
     {
         bool IndexRepeated = false;
 
-        // Loop  over all new indices
+        // Loop over all new indices
         for(unsigned int i = 1; i < StakedIndicesVector.size(); i++, IndexRepeated=false)
         {
             // Loop over previous indices
@@ -666,7 +673,7 @@ void Interpolator::ConvertIndicesToTimeSteps(
         unsigned int InputDataTimeStepsLength,
         unsigned int *RequestedDataTimeStepIndices,
         unsigned int RequestedDataTimeStepIndicesLength,
-        double *RequestedDataTimeSteps)                // Output
+        double *InputUpdateTimeSteps)                // Output
 {
     for(unsigned int IndicesIterator=0;
         IndicesIterator < RequestedDataTimeStepIndicesLength;
@@ -676,7 +683,7 @@ void Interpolator::ConvertIndicesToTimeSteps(
         assert(RequestedDataTimeStepIndices[IndicesIterator] < InputDataTimeStepsLength);
 
         // Convert to time step value
-        RequestedDataTimeSteps[IndicesIterator] = InputDataTimeSteps[RequestedDataTimeStepIndices[IndicesIterator]];
+        InputUpdateTimeSteps[IndicesIterator] = InputDataTimeSteps[RequestedDataTimeStepIndices[IndicesIterator]];
     }
 }
 
@@ -803,20 +810,22 @@ int Interpolator::RequestData(
         // No point to Interpolate
         return 1;
     }
+    HERE
 
-    // Time Steps
-    unsigned int TimeStepsLength = inputInfo->Length(FilterInformation::UPDATE_TIME_STEPS());
-    double *TimeSteps = inputInfo->Get(FilterInformation::TIME_STEPS());
+    // Input Time Steps
+    // TODO: problem here: TIME_STEPS is not defined in previous filter.
+    unsigned int InputTimeStepsLength = inputInfo->Length(FilterInformation::TIME_STEPS());
+    double *InputTimeSteps = inputInfo->Get(FilterInformation::TIME_STEPS());
 
-    // Update Time Steps
-    unsigned int UpdateTimeStepsLength = outputInfo->Length(FilterInformation::UPDATE_TIME_STEPS());
-    double *UpdateTimeSteps = outputInfo->Get(FilterInformation::UPDATE_TIME_STEPS());
+    // Output Update Time Steps
+    unsigned int OutputUpdateTimeStepsLength = outputInfo->Length(FilterInformation::UPDATE_TIME_STEPS());
+    double *OutputUpdateTimeSteps = outputInfo->Get(FilterInformation::UPDATE_TIME_STEPS());
 
     // Interpolate
     bool InterpolateStatus = this->Interpolate(
             input,output,
-            TimeSteps,TimeStepsLength,
-            UpdateTimeSteps,UpdateTimeStepsLength);
+            InputTimeSteps,InputTimeStepsLength,
+            OutputUpdateTimeSteps,OutputUpdateTimeStepsLength);
 
     output->ShallowCopy(vtkDataSet::SafeDownCast(input->GetBlock(0)));
 
@@ -1036,38 +1045,47 @@ void Interpolator::MultiBlockDataSetToDataObjectArray(
     }
 }
 
-// ============================
-// Find Interval Index In Array
-// ============================
+// ===================================
+// Find Interval Index In Vector Array
+// ===================================
+
+// Description:
+// Finds te interval index that an inquiry value is located in. That is, if
+// Array[i] <= InquiryValue < Array[i+1]
+// the function returns "i". Note that the interval indices start from 0. So
+// the index of first interval is 0.
+// Also it is asusmed that the Array is sorted in a "acsending" manner.
+// If the inquity value is out of bound of array, it returns -1.
 
 int Interpolator::FindIntervalIndexInArray(
         double InquiryValue,
         double *Array,
         unsigned int ArrayLength)
 {
-    /// TEST ///
-    DISPLAY(InquiryValue);
-    DISPLAY(Array,ArrayLength);
-    // Initialize out of range flag
-    int OUT_OF_RANGE_FLAG = -1;
+    // Initialize output with out of range value
+    int IntervalIndex = -1;
 
-    // Interval Index
-    int IntervalIndex = OUT_OF_RANGE_FLAG;
-
-    // Loop over Intervals of array
-    for(unsigned int i=0; i<ArrayLength-1; i++)
+    // Check inquiry value is in bounds
+    if(InquiryValue < Array[0] ||
+       InquiryValue > Array[ArrayLength])
     {
-        // Check if value is in the interval
-        if(InquiryValue >= Array[i] && InquiryValue <= Array[i+1])
+        return IntervalIndex;
+    }
+
+    // Iterate over array intervals
+    for(unsigned int IntervalIterator = 0; IntervalIterator < ArrayLength-1; IntervalIterator++)
+    {
+        if(InquiryValue >= Array[IntervalIterator]&&
+           InquiryValue < Array[IntervalIterator+1])
         {
-            IntervalIndex = i;
+            IntervalIndex = IntervalIterator;
             break;
         }
     }
 
-    // return -1 if no interval found
     return IntervalIndex;
 }
+
 
 // =======================================
 // Find Temporal Interpolation Coefficient

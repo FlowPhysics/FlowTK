@@ -6,7 +6,12 @@
    has problem.
    The problem is that the reader only read one file, but it should read two files at least for TimeStep[0] and TimeStep[1].
 
-3- Working on Converting Intervals to Indices
+3- First Problem: In Seed
+   In Seed > InitializeTracers() the NumberOfSeedPoints are 64, for 4x4x4 grid. But the number of "TracerCounters" is 15 (line 1070 of Seed.cxx). 
+   Either the seed grid intersection gives 15 points or something is wrong.
+   In both cases, only 15 number of tracerers should shpw up in FlowMap. But flowmap again uses 64 tracers. If 15 is corect in Seed, the 15 tracers should be used in FlowMap.
 
-4- In Reader::RequestData at line 613 till 618.
-   We set OutputTimeSteps to UpdateTimeSteps. Not all the time they are equal. First, in RequestInfoirmation the UpdateTimeSteps should be processed to see which file indices needed to be read. Then Find time steps of those files and set them in output time step. This can be done in a separate function, that called inside RequestInformation. In RequestData we can use the processed data, instead of re-calculate it again.
+4- Second Problem: Interpolator
+   Run the code. We see that FlowMap uses "UpdateInputFilter". It calls Interpolator and execution goes to Interpolator.
+   Now, in Interpolator > Request Data, at line 817, we used TIME_STEPS from input. This is not defined in previous filter yet! This is definitely NULL.
+   Next, RequestData calls a function "Interpolate". There we have segmentation falut.

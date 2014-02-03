@@ -572,32 +572,32 @@ int Seed::RequestInformation(
         return 0;
     }
 
-    // 1- Time Steps //
+    // 1- Data Time Steps //
 
     // Check if TimeSteps key exists in the input
-    if(!inputInfo->Has(FilterInformation::TIME_STEPS()))
+    if(!inputInfo->Has(FilterInformation::DATA_TIME_STEPS()))
     {
-        ERROR(<< "inputInfo does not have TIME_STEPS key.");
-        vtkErrorMacro("inputInfo does not have TIME_STEPS key.");
+        ERROR(<< "inputInfo does not have DATA_TIME_STEPS key.");
+        vtkErrorMacro("inputInfo does not have DATA_TIME_STEPS key.");
         return 0;
     }
 
-    // Get TimeSteps
-    unsigned int TimeStepsLength = inputInfo->Length(FilterInformation::TIME_STEPS());
-    double *TimeSteps = inputInfo->Get(FilterInformation::TIME_STEPS());
+    // Get Input Data TimeSteps
+    unsigned int InputDataTimeStepsLength = inputInfo->Length(FilterInformation::DATA_TIME_STEPS());
+    double *InputDataTimeSteps = inputInfo->Get(FilterInformation::DATA_TIME_STEPS());
 
     // Check TimeSteps
-    if(TimeStepsLength < 1)
+    if(InputDataTimeStepsLength < 1)
     {
-        ERROR(<< "TimeSteps length is zero.");
-        vtkErrorMacro("TimeSteps length is zero.");
+        ERROR(<< "InputDataTimeSteps length is zero.");
+        vtkErrorMacro("InputDataTimeSteps length is zero.");
         return 0;
     }
 
-    if(TimeSteps == NULL)
+    if(InputDataTimeSteps == NULL)
     {
-        ERROR(<< "TimeSteps is NULL.");
-        vtkErrorMacro(<< "TimeSteps is NULL.");
+        ERROR(<< "InputDataTimeSteps is NULL.");
+        vtkErrorMacro(<< "InputDataTimeSteps is NULL.");
         return 0;
     }
 
@@ -608,7 +608,7 @@ int Seed::RequestInformation(
     double UpdateTimeSteps[UpdateTimeStepsLength];
     
     // Set Update TimeSteps to the first time step
-    UpdateTimeSteps[0] = TimeSteps[0];
+    UpdateTimeSteps[0] = InputDataTimeSteps[0];
 
     // Set UpdateTimeSteps key to input
     inputInfo->Set(FilterInformation::UPDATE_TIME_STEPS(),UpdateTimeSteps,UpdateTimeStepsLength);
@@ -637,36 +637,36 @@ int Seed::RequestUpdateExtent(
         return 0;
     }
 
-    // 1- TIME STEPS //
+    // 1- Data Time Steps //
 
     // Check inputInfo has TIME_STEPS key
-    if(!inputInfo->Has(FilterInformation::TIME_STEPS()))
+    if(!inputInfo->Has(FilterInformation::DATA_TIME_STEPS()))
     {
-        ERROR(<< "inputInfo does not have TIME_STEPS key.");
-        vtkErrorMacro("inputInfo does not have TIME_STEPS key.");
+        ERROR(<< "inputInfo does not have DATA_TIME_STEPS key.");
+        vtkErrorMacro("inputInfo does not have DATA_TIME_STEPS key.");
         return 0;
     }
 
-    // Get TimeSteps
-    double *TimeSteps = inputInfo->Get(FilterInformation::TIME_STEPS());
-    unsigned int TimeStepsLength = inputInfo->Length(FilterInformation::TIME_STEPS());
+    // Get Input DataTimeSteps
+    double *InputDataTimeSteps = inputInfo->Get(FilterInformation::DATA_TIME_STEPS());
+    unsigned int InputDataTimeStepsLength = inputInfo->Length(FilterInformation::DATA_TIME_STEPS());
 
     // Check TimeSteps
-    if(TimeStepsLength < 1)
+    if(InputDataTimeStepsLength < 1)
     {
-        ERROR(<< "TimeSteps length is zero.");
-        vtkErrorMacro("TimeSteps length is zero.");
+        ERROR(<< "InputDataTimeSteps length is zero.");
+        vtkErrorMacro("InputDataTimeSteps length is zero.");
         return 0;
     }
 
-    if(TimeSteps == NULL)
+    if(InputDataTimeSteps == NULL)
     {
-        ERROR(<< "TimeSteps is NULL.");
-        vtkErrorMacro("TimeSteps is NULL.");
+        ERROR(<< "InputDataTimeSteps is NULL.");
+        vtkErrorMacro("InputDataTimeSteps is NULL.");
         return 0;
     }
 
-    // 2- UPDATE TIME STEPS //
+    // 2- UPDATE TIME STEPS from input //
 
     // Check inputInfo has UPDATE TIME STEPS key
     if(!inputInfo->Has(FilterInformation::UPDATE_TIME_STEPS()))
@@ -677,10 +677,8 @@ int Seed::RequestUpdateExtent(
     }
 
     // Update Time Steps
-    double *UpdateTimeSteps = &TimeSteps[0];
+    double *UpdateTimeSteps = &InputDataTimeSteps[0];
     unsigned int UpdateTimeStepsLength = 1;
-
-    DISPLAY(UpdateTimeSteps,UpdateTimeStepsLength);
 
     // Set UpdateTimeSteps
     inputInfo->Set(FilterInformation::UPDATE_TIME_STEPS(),UpdateTimeSteps,UpdateTimeStepsLength);
@@ -878,11 +876,29 @@ int Seed::SetOutputGridGeometry(vtkStructuredPoints *StructuredPoints)
 // Find Intersection Of Grids
 // ==========================
 
+// Description:
+// Given two grids 1-DataGrid and 2-SeedGrid, this method finds the intersection
+// of two grids. Output is the Cell Ids of points that are shared between two grids.
+
 int Seed::FindIntersectionOfGrids(
         vtkDataSet *DataGrid,
         vtkDataSet *SeedGrid,
-        vtkIntArray *CellIds)
+        vtkIntArray *CellIds)  // Output
 {
+    // Check DataGrid
+    if(DataGrid == NULL)
+    {
+        ERROR(<< "DataGrid is NULL.");
+        vtkErrorMacro("DataGrid is NULL.");
+        return 0;
+    }
+    else if(DataGrid->GetNumberOfPoints() < 1)
+    {
+        ERROR(<< "DataGrid does not have points.");
+        vtkErrorMacro("DataGrid does not have points.");
+        return 0;
+    }
+
     vtkIdType NumberOfSeedPoints = SeedGrid->GetNumberOfPoints();
     CellIds->SetNumberOfComponents(1);
     CellIds->SetNumberOfTuples(NumberOfSeedPoints);
@@ -1054,7 +1070,7 @@ void Seed::InitializeTracers(
             TracerCounter++;
 
             // Update Progress
-            this->ProgressUpdate(TracerCounter,NumberOfTracers);
+            this->ProgressUpdate(TracerCounter-1,NumberOfTracers);
         }
     }
 

@@ -3,6 +3,9 @@
 # =====
 
 build/*
+*.obj
+*.o
+*.out
 
 # ===
 # Log
@@ -33,6 +36,17 @@ doc/*.log
 doc/*.out
 doc/*.tex
 doc/*.toc
+doc/*.bib
+doc/*.cls
+doc/*.nav
+doc/*.snm
+doc/*.vrb
+doc/*.lof
+doc/*.lot
+doc/*.dvi
+doc/*.bbl
+doc/*.bst
+doc/*.synctex.gz
 
 # ===
 # Vim
